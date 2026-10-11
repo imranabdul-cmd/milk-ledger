@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import {
@@ -11,20 +11,27 @@ import {
   User,
   Home,
   DollarSign,
-  LogIn
+  LogIn,
+  Eye,
+  EyeOff,
+  Play,
+  Pause,
+  Sparkles,
+  Loader2
 } from 'lucide-react';
 
 type AuthMode = 'login' | 'create_family';
 
 export const LoginPage: React.FC = () => {
   const { login, registerFamily } = useAuth();
-  const { language, toggleLanguage, t } = useLanguage();
+  const { language, setLanguage, t } = useLanguage();
 
   const [mode, setMode] = useState<AuthMode>('login');
 
   // Common Fields
   const [phone, setPhone] = useState<string>('9952590815');
   const [pin, setPin] = useState<string>('');
+  const [showPin, setShowPin] = useState<boolean>(false);
   const [name, setName] = useState<string>('');
 
   // Create Family Fields
@@ -33,6 +40,21 @@ export const LoginPage: React.FC = () => {
 
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+
+  // Video playback controls
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [isPlaying, setIsPlaying] = useState<boolean>(true);
+
+  const toggleVideoPlayback = () => {
+    if (!videoRef.current) return;
+    if (videoRef.current.paused) {
+      videoRef.current.play();
+      setIsPlaying(true);
+    } else {
+      videoRef.current.pause();
+      setIsPlaying(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,58 +85,226 @@ export const LoginPage: React.FC = () => {
   };
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '1.25rem', background: 'linear-gradient(135deg, #eff6ff 0%, #e0e7ff 100%)' }}>
-      {/* Language Switcher in Corner */}
-      <div style={{ position: 'absolute', top: '1.25rem', right: '1.25rem', zIndex: 10 }}>
-        <button
-          type="button"
-          onClick={toggleLanguage}
-          className="btn-secondary"
-          style={{ background: 'white', border: '1px solid #cbd5e1', boxShadow: 'var(--shadow-sm)', padding: '0.5rem 0.85rem' }}
-          title={t('language')}
-        >
-          <Globe size={18} color="#2563eb" />
-          <span style={{ fontWeight: 700 }}>
-            {language === 'ta' ? 'தமிழ்' : language === 'ml' ? 'മലയാളം' : 'English'}
-          </span>
-        </button>
-      </div>
+    <div className="login-video-wrapper">
+      {/* ==============================================================
+          CINEMATIC BACKGROUND MILK VIDEO
+          ============================================================== */}
+      <video
+        ref={videoRef}
+        className="login-bg-video"
+        autoPlay
+        loop
+        muted
+        playsInline
+        poster="/videos/milk_thumb.jpg"
+        aria-hidden="true"
+      >
+        <source src="/videos/Milk_video.mp4" type="video/mp4" />
+      </video>
 
-      <div style={{ width: '100%', maxWidth: '440px', background: 'white', borderRadius: 'var(--radius-xl)', padding: '2rem 1.75rem', boxShadow: 'var(--shadow-card)', border: '1px solid rgba(226, 232, 240, 0.8)', marginTop: '2rem', marginBottom: '2rem' }}>
-        {/* Brand Header */}
-        <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
-          <div style={{ width: '60px', height: '60px', background: 'linear-gradient(135deg, #1e40af 0%, #2563eb 100%)', borderRadius: 'var(--radius-lg)', margin: '0 auto 0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 16px rgba(37, 99, 235, 0.25)' }}>
-            <Milk size={32} color="white" />
-          </div>
-          <h1 style={{ fontSize: '1.45rem', fontWeight: 800, color: 'var(--slate-900)', marginBottom: '0.2rem' }}>
-            {t('appName')}
-          </h1>
-          <p style={{ fontSize: '0.85rem', color: 'var(--slate-500)' }}>
-            {t('tagline')}
-          </p>
-        </div>
+      {/* Atmospheric dark gradient overlay for crystal-clear foreground readability */}
+      <div className="login-video-overlay" />
 
-        {/* Multi-Tenant Auth Mode Segmented Control: 2 Public Actions */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.35rem', background: '#f1f5f9', padding: '0.35rem', borderRadius: '14px', marginBottom: '1.5rem' }}>
-          <button
-            type="button"
-            onClick={() => { setMode('login'); setError(null); }}
+      {/* Ambient glowing aura behind the card */}
+      <div className="login-glow-orb" />
+
+      {/* ==============================================================
+          TOP FLOATING NAVIGATION BAR
+          ============================================================== */}
+      <header className="login-top-nav">
+        {/* Brand Pill */}
+        <div className="login-brand-pill">
+          <div
             style={{
-              padding: '0.65rem 0.5rem',
-              border: 'none',
-              borderRadius: '10px',
-              fontSize: '0.85rem',
-              fontWeight: 700,
-              cursor: 'pointer',
-              background: mode === 'login' ? 'white' : 'transparent',
-              color: mode === 'login' ? '#1e40af' : '#64748b',
-              boxShadow: mode === 'login' ? '0 2px 6px rgba(0,0,0,0.08)' : 'none',
-              transition: 'all 0.2s ease',
+              width: '28px',
+              height: '28px',
+              borderRadius: '50%',
+              background: 'linear-gradient(135deg, #2563eb, #38bdf8)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: '0.35rem'
+              boxShadow: '0 2px 8px rgba(37,99,235,0.4)'
             }}
+          >
+            <Milk size={15} color="white" />
+          </div>
+          <span style={{ fontWeight: 800, fontSize: '0.9rem', letterSpacing: '-0.01em' }}>
+            Family Milk
+          </span>
+          <span
+            style={{
+              fontSize: '0.65rem',
+              fontWeight: 800,
+              background: 'rgba(56, 189, 248, 0.2)',
+              color: '#38bdf8',
+              padding: '0.1rem 0.45rem',
+              borderRadius: '999px',
+              border: '1px solid rgba(56, 189, 248, 0.3)'
+            }}
+          >
+            PRO
+          </span>
+        </div>
+
+        {/* Right Action Controls: Video Play/Pause & Language Selector */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          {/* Video Toggle Button */}
+          <button
+            type="button"
+            onClick={toggleVideoPlayback}
+            className="login-brand-pill"
+            style={{
+              cursor: 'pointer',
+              padding: '0.45rem',
+              width: '36px',
+              height: '36px',
+              justifyContent: 'center'
+            }}
+            title={isPlaying ? 'Pause Background Video' : 'Play Background Video'}
+            aria-label="Toggle background video"
+          >
+            {isPlaying ? <Pause size={15} color="#94a3b8" /> : <Play size={15} color="#38bdf8" />}
+          </button>
+
+          {/* Quick Language Switcher Pills */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              background: 'rgba(15, 23, 42, 0.75)',
+              backdropFilter: 'blur(16px)',
+              border: '1px solid rgba(255, 255, 255, 0.18)',
+              borderRadius: '9999px',
+              padding: '0.2rem 0.3rem 0.2rem 0.5rem',
+              boxShadow: '0 4px 16px rgba(0,0,0,0.25)',
+              gap: '0.2rem'
+            }}
+          >
+            <Globe size={13} color="#94a3b8" />
+            <button
+              type="button"
+              onClick={() => setLanguage('ta')}
+              style={{
+                background: language === 'ta' ? '#2563eb' : 'transparent',
+                color: language === 'ta' ? '#ffffff' : '#94a3b8',
+                border: 'none',
+                borderRadius: '999px',
+                padding: '0.25rem 0.6rem',
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              தமிழ்
+            </button>
+            <button
+              type="button"
+              onClick={() => setLanguage('ml')}
+              style={{
+                background: language === 'ml' ? '#2563eb' : 'transparent',
+                color: language === 'ml' ? '#ffffff' : '#94a3b8',
+                border: 'none',
+                borderRadius: '999px',
+                padding: '0.25rem 0.6rem',
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              മലയാളം
+            </button>
+            <button
+              type="button"
+              onClick={() => setLanguage('en')}
+              style={{
+                background: language === 'en' ? '#2563eb' : 'transparent',
+                color: language === 'en' ? '#ffffff' : '#94a3b8',
+                border: 'none',
+                borderRadius: '999px',
+                padding: '0.25rem 0.6rem',
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              EN
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* ==============================================================
+          THE LUXURY GLASSMORPHIC LOGIN CARD
+          ============================================================== */}
+      <main className="login-glass-card">
+        {/* Brand Logo & Headline */}
+        <div style={{ textAlign: 'center', marginBottom: '1.4rem' }}>
+          {/* Logo with Soft Gradient Glow */}
+          <div className="login-logo-glow">
+            <Milk size={34} color="white" />
+          </div>
+
+          {/* Micro Tagline Pill */}
+          <div
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.35rem',
+              background: '#eff6ff',
+              border: '1px solid #bfdbfe',
+              color: '#1d4ed8',
+              fontSize: '0.72rem',
+              fontWeight: 800,
+              padding: '0.2rem 0.65rem',
+              borderRadius: '999px',
+              marginBottom: '0.45rem',
+              letterSpacing: '0.02em',
+              textTransform: 'uppercase'
+            }}
+          >
+            <Sparkles size={12} color="#2563eb" />
+            <span>Smart Dairy Ledger</span>
+          </div>
+
+          <h1
+            style={{
+              fontSize: '1.55rem',
+              fontWeight: 900,
+              color: '#0f172a',
+              letterSpacing: '-0.02em',
+              marginBottom: '0.25rem'
+            }}
+          >
+            {t('appName')}
+          </h1>
+
+          <p
+            style={{
+              fontSize: '0.85rem',
+              color: '#64748b',
+              fontWeight: 500,
+              margin: 0
+            }}
+          >
+            {language === 'ta'
+              ? 'தினசரி பால் கணக்கு & மாதாந்திர தீர்வு'
+              : language === 'ml'
+              ? 'പ്രതിദിന പാൽ കണക്കും പ്രതിമാസ തീർപ്പും'
+              : t('tagline')}
+          </p>
+        </div>
+
+        {/* Multi-Tenant Segmented Control: Login vs Create Family */}
+        <div className="login-segmented-control" role="tablist">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={mode === 'login'}
+            onClick={() => { setMode('login'); setError(null); }}
+            className={`login-segmented-btn ${mode === 'login' ? 'active' : ''}`}
           >
             <LogIn size={16} />
             <span>{t('loginTab')}</span>
@@ -122,142 +312,270 @@ export const LoginPage: React.FC = () => {
 
           <button
             type="button"
+            role="tab"
+            aria-selected={mode === 'create_family'}
             onClick={() => { setMode('create_family'); setError(null); }}
-            style={{
-              padding: '0.65rem 0.5rem',
-              border: 'none',
-              borderRadius: '10px',
-              fontSize: '0.85rem',
-              fontWeight: 700,
-              cursor: 'pointer',
-              background: mode === 'create_family' ? 'white' : 'transparent',
-              color: mode === 'create_family' ? '#1e40af' : '#64748b',
-              boxShadow: mode === 'create_family' ? '0 2px 6px rgba(0,0,0,0.08)' : 'none',
-              transition: 'all 0.2s ease',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '0.35rem'
-            }}
+            className={`login-segmented-btn ${mode === 'create_family' ? 'active' : ''}`}
           >
             <Home size={16} />
             <span>{t('createFamilyTab')}</span>
           </button>
         </div>
 
+        {/* Error Notification Alert */}
         {error && (
-          <div style={{ background: '#fee2e2', color: '#b91c1c', padding: '0.75rem 1rem', borderRadius: '12px', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem' }}>
-            <AlertCircle size={18} style={{ flexShrink: 0 }} />
+          <div
+            style={{
+              background: '#fef2f2',
+              color: '#991b1b',
+              border: '1.5px solid #fecaca',
+              padding: '0.75rem 1rem',
+              borderRadius: '14px',
+              marginBottom: '1.25rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.55rem',
+              fontSize: '0.85rem',
+              fontWeight: 600,
+              animation: 'fadeIn 0.2s ease'
+            }}
+          >
+            <AlertCircle size={18} color="#dc2626" style={{ flexShrink: 0 }} />
             <span>{error}</span>
           </div>
         )}
 
+        {/* Form */}
         <form onSubmit={handleSubmit}>
           {/* MODE: CREATE FAMILY SPECIFIC FIELDS */}
           {mode === 'create_family' && (
             <>
-              <div className="form-group">
-                <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  <Home size={16} color="#64748b" />
+              <div className="login-input-group">
+                <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem', fontWeight: 700, color: '#334155', marginBottom: '0.35rem' }}>
+                  <Home size={15} color="#2563eb" />
                   <span>{t('familyNameLabel')}</span>
                 </label>
-                <input
-                  type="text"
-                  className="form-input"
-                  placeholder={t('familyNamePlaceholder')}
-                  value={familyName}
-                  onChange={(e) => setFamilyName(e.target.value)}
-                  required
-                />
+                <div className="login-input-wrapper">
+                  <span className="login-input-icon">
+                    <Home size={17} />
+                  </span>
+                  <input
+                    type="text"
+                    className="login-input-field"
+                    placeholder={t('familyNamePlaceholder')}
+                    value={familyName}
+                    onChange={(e) => setFamilyName(e.target.value)}
+                    required
+                  />
+                </div>
               </div>
 
-              <div className="form-group">
-                <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  <User size={16} color="#64748b" />
+              <div className="login-input-group">
+                <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem', fontWeight: 700, color: '#334155', marginBottom: '0.35rem' }}>
+                  <User size={15} color="#2563eb" />
                   <span>{t('ownerNameLabel')}</span>
                 </label>
-                <input
-                  type="text"
-                  className="form-input"
-                  placeholder={t('ownerNamePlaceholder')}
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
-                />
+                <div className="login-input-wrapper">
+                  <span className="login-input-icon">
+                    <User size={17} />
+                  </span>
+                  <input
+                    type="text"
+                    className="login-input-field"
+                    placeholder={t('ownerNamePlaceholder')}
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    required
+                  />
+                </div>
               </div>
 
-              <div className="form-group">
-                <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  <DollarSign size={16} color="#64748b" />
+              <div className="login-input-group">
+                <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem', fontWeight: 700, color: '#334155', marginBottom: '0.35rem' }}>
+                  <DollarSign size={15} color="#2563eb" />
                   <span>{t('initialRateLabel')}</span>
                 </label>
-                <input
-                  type="number"
-                  step="0.5"
-                  className="form-input"
-                  value={initialRateRupees}
-                  onChange={(e) => setInitialRateRupees(parseFloat(e.target.value) || 56)}
-                  required
-                  style={{ fontWeight: 700 }}
-                />
+                <div className="login-input-wrapper">
+                  <span className="login-input-icon">
+                    <DollarSign size={17} />
+                  </span>
+                  <input
+                    type="number"
+                    step="0.5"
+                    className="login-input-field"
+                    value={initialRateRupees}
+                    onChange={(e) => setInitialRateRupees(parseFloat(e.target.value) || 56)}
+                    required
+                    style={{ fontWeight: 800, fontSize: '1.05rem', color: '#1e3a8a' }}
+                  />
+                </div>
               </div>
             </>
           )}
 
-          {/* COMMON: PHONE INPUT */}
-          <div className="form-group">
-            <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-              <Phone size={16} color="#64748b" />
+          {/* COMMON: PHONE NUMBER INPUT */}
+          <div className="login-input-group">
+            <label
+              className="form-label"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.4rem',
+                fontSize: '0.85rem',
+                fontWeight: 700,
+                color: '#334155',
+                marginBottom: '0.35rem'
+              }}
+            >
+              <Phone size={15} color="#2563eb" />
               <span>{t('phoneNumber')}</span>
             </label>
-            <input
-              type="tel"
-              className="form-input"
-              placeholder={t('phonePlaceholder')}
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              required
-              style={{ fontSize: '1.15rem', letterSpacing: '0.02em', fontWeight: 600 }}
-            />
+            <div className="login-input-wrapper">
+              <span className="login-input-icon">
+                <Phone size={17} />
+              </span>
+              <input
+                type="tel"
+                className="login-input-field"
+                placeholder={t('phonePlaceholder')}
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                required
+                style={{
+                  fontSize: '1.08rem',
+                  letterSpacing: '0.03em',
+                  fontWeight: 700,
+                  color: '#0f172a'
+                }}
+              />
+            </div>
           </div>
 
-          {/* COMMON: PIN INPUT */}
-          <div className="form-group" style={{ marginBottom: '1.75rem' }}>
-            <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-              <Lock size={16} color="#64748b" />
-              <span>{t('pin')}</span>
-            </label>
-            <input
-              type="password"
-              inputMode="numeric"
-              maxLength={10}
-              className="form-input"
-              placeholder="••••"
-              value={pin}
-              onChange={(e) => setPin(e.target.value)}
-              required
-              style={{ fontSize: '1.4rem', letterSpacing: '0.2em', textAlign: 'center', fontWeight: 700 }}
-            />
+          {/* COMMON: SECURITY PIN INPUT WITH SHOW/HIDE TOGGLE */}
+          <div className="login-input-group" style={{ marginBottom: '1.6rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
+              <label
+                className="form-label"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.4rem',
+                  fontSize: '0.85rem',
+                  fontWeight: 700,
+                  color: '#334155',
+                  margin: 0
+                }}
+              >
+                <Lock size={15} color="#2563eb" />
+                <span>{t('pin')}</span>
+              </label>
+
+              <button
+                type="button"
+                onClick={() => setShowPin(!showPin)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#64748b',
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.25rem',
+                  padding: '0.1rem 0.35rem',
+                  borderRadius: '6px'
+                }}
+              >
+                {showPin ? <EyeOff size={14} /> : <Eye size={14} />}
+                <span>{showPin ? (language === 'ta' ? 'மறை' : 'Hide') : (language === 'ta' ? 'காட்டு' : 'Show')}</span>
+              </button>
+            </div>
+
+            <div className="login-input-wrapper">
+              <span className="login-input-icon">
+                <Lock size={17} />
+              </span>
+              <input
+                type={showPin ? 'text' : 'password'}
+                inputMode="numeric"
+                maxLength={10}
+                className="login-input-field"
+                placeholder="••••"
+                value={pin}
+                onChange={(e) => setPin(e.target.value)}
+                required
+                style={{
+                  fontSize: showPin ? '1.15rem' : '1.5rem',
+                  letterSpacing: showPin ? '0.08em' : '0.25em',
+                  textAlign: 'center',
+                  fontWeight: 800,
+                  color: '#1e3a8a'
+                }}
+              />
+            </div>
           </div>
 
-          {/* SUBMIT CTA */}
+          {/* HIGH-END SUBMIT BUTTON */}
           <button
             type="submit"
-            className="btn-primary-big"
+            className="login-submit-btn"
             disabled={isLoading}
           >
-            {isLoading
-              ? (mode === 'create_family' ? t('creatingFamily') : t('loggingIn'))
-              : (mode === 'create_family' ? t('createFamilyCTA') : t('loginBtn'))}
+            {isLoading ? (
+              <>
+                <Loader2 size={20} className="spinner" style={{ animation: 'spin 1s linear infinite' }} />
+                <span>{mode === 'create_family' ? t('creatingFamily') : t('loggingIn')}</span>
+              </>
+            ) : (
+              <>
+                <LogIn size={18} />
+                <span>{mode === 'create_family' ? t('createFamilyCTA') : t('loginBtn')}</span>
+              </>
+            )}
           </button>
         </form>
 
-        {/* Permanent Login Reassurance Badge */}
-        <div style={{ marginTop: '1.25rem', padding: '0.85rem 1rem', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '12px', fontSize: '0.82rem', color: '#166534', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
-          <ShieldCheck size={20} color="#16a34a" style={{ flexShrink: 0 }} />
-          <span style={{ fontWeight: 600 }}>{t('persistentLoginNote')}</span>
+        {/* Security Reassurance Trust Badge */}
+        <div
+          style={{
+            marginTop: '1.35rem',
+            padding: '0.75rem 0.95rem',
+            background: 'rgba(240, 253, 244, 0.85)',
+            border: '1.5px solid #bbf7d0',
+            borderRadius: '16px',
+            fontSize: '0.8rem',
+            color: '#15803d',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '0.5rem',
+            boxShadow: '0 2px 8px rgba(16, 185, 129, 0.08)'
+          }}
+        >
+          <ShieldCheck size={18} color="#16a34a" style={{ flexShrink: 0 }} />
+          <span style={{ fontWeight: 700 }}>
+            {t('persistentLoginNote')}
+          </span>
         </div>
-      </div>
+      </main>
+
+      {/* Floating Bottom Footer */}
+      <footer
+        style={{
+          position: 'relative',
+          zIndex: 10,
+          color: 'rgba(255, 255, 255, 0.65)',
+          fontSize: '0.75rem',
+          fontWeight: 600,
+          textAlign: 'center',
+          paddingBottom: '1.5rem',
+          letterSpacing: '0.02em',
+          textShadow: '0 1px 3px rgba(0,0,0,0.5)'
+        }}
+      >
+        Family Milk Account • Pure & Simple Milk Tracking
+      </footer>
     </div>
   );
 };
