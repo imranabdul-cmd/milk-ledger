@@ -1,0 +1,22 @@
+{
+  "name": "family-milk-account",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Production-ready family milk purchase and monthly settlement web application",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "dev:server": "npm --prefix server run dev",
+    "dev:client": "npm --prefix client run dev",
+    "build": "npm run build:shared && npm --prefix client run build && npm --prefix server run build",
+    "build:shared": "tsc -b shared",
+    "start": "node server/dist/index.js",
+    "test": "npm --prefix server run test",
+    "migrate": "npm --prefix server run migrate",
+    "db:test": "npm --prefix server run db:test",
+    "db:seed": "npm --prefix server run db:seed"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2",
+    "typescript": "^5.7.3"
+  }
+}

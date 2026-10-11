@@ -1,0 +1,28 @@
+# Render Infrastructure as Code Blueprint
+# Deploy as a single Web Service serving both Express backend and Vite static frontend build.
+
+services:
+  - type: web
+    name: family-milk-account
+    env: node
+    plan: free
+    region: singapore # or ohio / oregon / frankfurt
+    buildCommand: npm install && npm run build
+    startCommand: npm run start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: TZ
+        value: Asia/Kolkata
+      - key: DATABASE_SSL
+        value: "true"
+      # Secure secrets to configure in Render Dashboard
+      - key: DATABASE_URL
+        sync: false # Set securely in Render dashboard
+      - key: JWT_SECRET
+        generateValue: true # Render automatically generates a cryptographically secure 256-bit secret
+      - key: INITIAL_ADMIN_PIN
+        value: "1234"
