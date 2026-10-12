@@ -5,6 +5,7 @@ import { calculateMilkCostPaise, formatPaise } from '@family-milk/shared';
 import { X, Check, Clock, Droplets, AlertCircle } from 'lucide-react';
 import { getKolkataTodayDateString } from '../utils/dateFormatter';
 import { notifyDataChanged } from '../hooks/useAutoSync';
+import { useToast } from '../context/ToastContext';
 
 interface QuickPurchaseModalProps {
   isOpen: boolean;
@@ -22,6 +23,7 @@ export const QuickPurchaseModal: React.FC<QuickPurchaseModalProps> = ({
   initialQuantityMl = 500,
 }) => {
   const { t, language } = useLanguage();
+  const { toast } = useToast();
 
   // Today in Asia/Kolkata
   const todayStr = getKolkataTodayDateString();
@@ -76,6 +78,13 @@ export const QuickPurchaseModal: React.FC<QuickPurchaseModalProps> = ({
           idempotencyKey,
         }),
       });
+
+      const qtyText = quantityMl === 500
+        ? (language === 'ta' ? '½ லிட்டர் பால் பதிவானது' : language === 'ml' ? '½ ലിറ്റർ പാൽ രേഖപ്പെടുത്തി' : '½ Litre Milk Recorded')
+        : quantityMl === 1000
+        ? (language === 'ta' ? '1 லிட்டர் பால் பதிவானது' : language === 'ml' ? '1 ലിറ്റർ പാൽ രേഖപ്പെടുത്തി' : '1 Litre Milk Recorded')
+        : (language === 'ta' ? `${quantityMl} மிலி பால் பதிவானது` : language === 'ml' ? `${quantityMl} മിലി പാൽ രേഖപ്പെടുത്തി` : `${quantityMl}ml Milk Recorded`);
+      toast.milk(qtyText);
 
       onSuccess();
       notifyDataChanged();

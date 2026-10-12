@@ -16,6 +16,7 @@ import {
   shareJpgWithAppa,
   formatKolkataDate
 } from '../utils/excelExport';
+import { useToast } from '../context/ToastContext';
 import {
   X,
   FileSpreadsheet,
@@ -42,6 +43,7 @@ export const ExportBillModal: React.FC<ExportBillModalProps> = ({
 }) => {
   const { language, t } = useLanguage();
   const { user } = useAuth();
+  const { toast } = useToast();
 
   const [selectedMonth, setSelectedMonth] = useState<string>(initialYearMonth);
   const [statementLang, setStatementLang] = useState<Language>(language);
@@ -141,10 +143,13 @@ export const ExportBillModal: React.FC<ExportBillModalProps> = ({
       });
       downloadBlob(bundle.blob, bundle.filename);
       setDownloadSuccessMsg(t('excelDownloaded'));
+      toast.success(
+        language === 'ta' ? 'எக்செல் பில் பதிவிறக்கப்பட்டது' : language === 'ml' ? 'Excel ബിൽ ഡൗൺലോഡ് ചെയ്തു' : 'Excel Bill downloaded'
+      );
       setTimeout(() => setDownloadSuccessMsg(null), 3000);
     } catch (err: any) {
       console.error('Download failed:', err);
-      alert('Failed to download Excel file: ' + (err?.message || 'Unknown error'));
+      toast.error('Failed to download Excel file: ' + (err?.message || 'Unknown error'));
     } finally {
       setIsDownloading(false);
     }
@@ -159,10 +164,13 @@ export const ExportBillModal: React.FC<ExportBillModalProps> = ({
       const { blob } = await captureBillCardAsJpg(billCardRef.current, filename);
       downloadBlob(blob, filename);
       setDownloadSuccessMsg(t('photoDownloaded'));
+      toast.success(
+        language === 'ta' ? 'பில் புகைப்படம் பதிவிறக்கப்பட்டது' : language === 'ml' ? 'ബിൽ ഫോട്ടോ ഡൗൺലോഡ് ചെയ്തു' : 'Bill Photo downloaded'
+      );
       setTimeout(() => setDownloadSuccessMsg(null), 3000);
     } catch (err: any) {
       console.error('Image capture failed:', err);
-      alert('Failed to capture photo: ' + (err?.message || 'Unknown error'));
+      toast.error('Failed to capture photo: ' + (err?.message || 'Unknown error'));
     } finally {
       setIsDownloading(false);
     }
@@ -179,11 +187,14 @@ export const ExportBillModal: React.FC<ExportBillModalProps> = ({
       const result = await shareJpgWithAppa(blob, filename, whatsappText);
       if (result.mode === 'download_and_whatsapp') {
         setDownloadSuccessMsg(t('photoDownloaded'));
+        toast.success(
+          language === 'ta' ? 'பில் புகைப்படம் பதிவிறக்கப்பட்டது' : language === 'ml' ? 'ബിൽ ഫോട്ടോ ഡൗൺലോഡ് ചെയ്തു' : 'Bill Photo downloaded'
+        );
         setTimeout(() => setDownloadSuccessMsg(null), 3000);
       }
     } catch (err: any) {
       console.error('Photo share failed:', err);
-      alert('Failed to share photo: ' + (err?.message || 'Unknown error'));
+      toast.error('Failed to share photo: ' + (err?.message || 'Unknown error'));
     } finally {
       setIsSharing(false);
     }
@@ -209,11 +220,14 @@ export const ExportBillModal: React.FC<ExportBillModalProps> = ({
       );
       if (result.mode === 'download_and_whatsapp') {
         setDownloadSuccessMsg(t('excelDownloaded'));
+        toast.success(
+          language === 'ta' ? 'எக்செல் பில் பதிவிறக்கப்பட்டது' : language === 'ml' ? 'Excel ബിൽ ഡൗൺലോഡ് ചെയ്തു' : 'Excel Bill downloaded'
+        );
         setTimeout(() => setDownloadSuccessMsg(null), 3000);
       }
     } catch (err: any) {
       console.error('Excel share failed:', err);
-      alert('Failed to share Excel: ' + (err?.message || 'Unknown error'));
+      toast.error('Failed to share Excel: ' + (err?.message || 'Unknown error'));
     } finally {
       setIsSharing(false);
     }
@@ -224,6 +238,9 @@ export const ExportBillModal: React.FC<ExportBillModalProps> = ({
     if (!whatsappText) return;
     navigator.clipboard.writeText(whatsappText);
     setCopySuccess(true);
+    toast.info(
+      language === 'ta' ? 'பில் விவரங்கள் நகலெடுக்கப்பட்டது' : language === 'ml' ? 'ബിൽ വിവരങ്ങൾ കോപ്പി ചെയ്തു' : 'Bill text copied'
+    );
     setTimeout(() => setCopySuccess(false), 2000);
   };
 

@@ -5,6 +5,7 @@ import { apiRequest } from '../api/client';
 import { PaymentStatus } from '@family-milk/shared';
 import { X, Edit3, Trash2, Calendar, Droplets, IndianRupee, CheckCircle, Clock, AlertCircle } from 'lucide-react';
 import { notifyDataChanged } from '../hooks/useAutoSync';
+import { useToast } from '../context/ToastContext';
 
 export interface EditableMilkRecord {
   id: string;
@@ -44,6 +45,7 @@ export const CorrectionModal: React.FC<CorrectionModalProps> = ({
 }) => {
   const { t, language } = useLanguage();
   const { user } = useAuth();
+  const { toast } = useToast();
   const isAdmin = user?.role === 'admin' || user?.role === 'owner';
 
   // Normalize initial values
@@ -166,6 +168,9 @@ export const CorrectionModal: React.FC<CorrectionModalProps> = ({
         }),
       });
 
+      toast.milk(
+        language === 'ta' ? 'பால் பதிவு மாற்றப்பட்டது' : language === 'ml' ? 'പാൽ വിവരങ്ങൾ മാറ്റി' : 'Milk entry updated'
+      );
       onSuccess();
       notifyDataChanged();
       onClose();
@@ -186,6 +191,9 @@ export const CorrectionModal: React.FC<CorrectionModalProps> = ({
         method: 'DELETE',
       });
 
+      toast.milk(
+        language === 'ta' ? 'பால் பதிவு நீக்கப்பட்டது' : language === 'ml' ? 'പാൽ രേഖ നീക്കം ചെയ്തു' : 'Milk record removed'
+      );
       onSuccess();
       notifyDataChanged();
       onClose();

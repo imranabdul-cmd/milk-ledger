@@ -9,10 +9,12 @@ import { ExportBillModal } from '../components/ExportBillModal';
 import { DateTimeBadge } from '../components/DateTimeBadge';
 import { Droplets, Plus, Filter, Edit3, Trash2, Clock, CheckCircle, FileSpreadsheet } from 'lucide-react';
 import { useAutoSync, notifyDataChanged } from '../hooks/useAutoSync';
+import { useToast } from '../context/ToastContext';
 
 export const PurchasesPage: React.FC = () => {
   const { t, language } = useLanguage();
   const { user } = useAuth();
+  const { toast } = useToast();
   const isAdmin = user?.role === 'admin' || user?.role === 'owner';
 
   const currentMonthStr = new Date().toISOString().substring(0, 7);
@@ -52,7 +54,9 @@ export const PurchasesPage: React.FC = () => {
 
   const handleDelete = async (id: string) => {
     if (!isAdmin) {
-      alert(language === 'ta' ? 'அட்மின்களுக்கு மட்டுமே இந்த அனுமதியுள்ளது' : language === 'ml' ? 'അഡ്മിന് മാത്രമേ അനുവാദമുള്ളൂ' : 'Admin privilege required to delete records');
+      toast.warning(
+        language === 'ta' ? 'அட்மின்களுக்கு மட்டுமே அனுமதி உண்டு' : language === 'ml' ? 'അഡ്മിന് മാത്രമേ അനുവാദമുള്ളൂ' : 'Admin privilege required'
+      );
       return;
     }
 
@@ -62,8 +66,13 @@ export const PurchasesPage: React.FC = () => {
       await apiRequest(`/api/milk/entries/${id}`, { method: 'DELETE' });
       fetchEntries(true);
       notifyDataChanged();
+      toast.milk(
+        language === 'ta' ? 'பால் பதிவு நீக்கப்பட்டது' : language === 'ml' ? 'പാൽ രേഖ നീക്കം ചെയ്തു' : 'Milk record removed'
+      );
     } catch (err: any) {
-      alert(err.message || 'Failed to delete');
+      toast.error(
+        err.message || (language === 'ta' ? 'நீக்க முடியவில்லை' : language === 'ml' ? 'നീക്കം ചെയ്യാൻ കഴിഞ്ഞില്ല' : 'Failed to delete')
+      );
     }
   };
 

@@ -31,6 +31,7 @@ import { CorrectionModal } from '../components/CorrectionModal';
 import { DateTimeBadge } from '../components/DateTimeBadge';
 import { AnimatedMilkGlass } from '../components/Header';
 import { useAutoSync, notifyDataChanged } from '../hooks/useAutoSync';
+import { useToast } from '../context/ToastContext';
 
 interface MemberHomeScreenProps {
   onSwitchToAdmin?: () => void;
@@ -40,6 +41,7 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
   const { user, logout, updateUserLanguage } = useAuth();
   const { language, setLanguage, t } = useLanguage();
   const { voiceEnabled, toggleVoice, speakText } = useVoice();
+  const { toast } = useToast();
 
   const isPrivileged = user?.role === 'owner' || user?.role === 'admin';
 
@@ -148,8 +150,13 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
       await apiRequest(`/api/milk/entries/${id}`, { method: 'DELETE' });
       fetchData();
       notifyDataChanged();
+      toast.milk(
+        language === 'ta' ? 'பால் பதிவு நீக்கப்பட்டது' : language === 'ml' ? 'പാൽ രേഖ നീക്കം ചെയ്തു' : 'Milk record removed'
+      );
     } catch (err: any) {
-      alert(err.message || 'Failed to delete record');
+      toast.error(
+        err.message || (language === 'ta' ? 'நீக்க முடியவில்லை' : language === 'ml' ? 'നീക്കം ചെയ്യാൻ കഴിഞ്ഞില്ല' : 'Failed to delete record')
+      );
     }
   };
 
@@ -221,6 +228,14 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
       setLastSavedEntry(res.entry);
       setStep('success');
 
+      // Milky glassmorphic notification
+      const qtyLabel = selectedQuantityMl === 500
+        ? (language === 'ta' ? '½ லிட்டர் பால் பதிவானது' : language === 'ml' ? '½ ലിറ്റർ പാൽ രേഖപ്പെടുത്തി' : '½ Litre Milk Recorded')
+        : selectedQuantityMl === 1000
+        ? (language === 'ta' ? '1 லிட்டர் பால் பதிவானது' : language === 'ml' ? '1 ലിറ്റർ പാൽ രേഖപ്പെടുത്തി' : '1 Litre Milk Recorded')
+        : (language === 'ta' ? `${selectedQuantityMl} மிலி பால் பதிவானது` : language === 'ml' ? `${selectedQuantityMl} മിലി പാൽ രേഖപ്പെടുത്തി` : `${selectedQuantityMl}ml Milk Recorded`);
+      toast.milk(qtyLabel);
+
       if (language === 'ml') {
         speakText('പാൽ കണക്ക് വിജയകരമായി രേഖപ്പെടുത്തി. നന്ദി!');
       } else if (language === 'ta') {
@@ -232,7 +247,9 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
       fetchData();
       notifyDataChanged();
     } catch (err: any) {
-      setSubmitError(err.message || 'Failed to save entry');
+      const errTxt = err.message || 'Failed to save entry';
+      setSubmitError(errTxt);
+      toast.error(errTxt);
       if (language === 'ml') {
         speakText('സേവ് ചെയ്യാൻ കഴിഞ്ഞില്ല. വീണ്ടും ശ്രമിക്കുക.');
       } else if (language === 'ta') {

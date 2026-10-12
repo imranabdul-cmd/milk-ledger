@@ -3342,3 +3342,224 @@ body:has(.login-video-wrapper) {
   }
 }
 
+/* ====================================================
+   Pure Milk Glassmorphic Toaster System
+   (Ultra-clean, Creamy Frosted Glass, Droplet Glow)
+   ==================================================== */
+.milk-toaster-container {
+  position: fixed;
+  top: 1.25rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 99999;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: calc(100% - 1.75rem);
+  max-width: 440px;
+  pointer-events: none;
+}
+
+@media (min-width: 768px) {
+  .milk-toaster-container {
+    left: auto;
+    right: 1.5rem;
+    transform: none;
+    max-width: 420px;
+  }
+}
+
+.milk-toast-card {
+  position: relative;
+  pointer-events: auto;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.85rem 1rem 0.95rem;
+  border-radius: 20px;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+
+  /* Pure Milk Frosted Glassmorphism Backdrop */
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.96) 0%, rgba(240, 248, 255, 0.90) 100%);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1.5px solid rgba(255, 255, 255, 0.95);
+  box-shadow: 
+    0 20px 42px -10px rgba(15, 34, 64, 0.16),
+    0 8px 18px -6px rgba(37, 99, 235, 0.14),
+    inset 0 1px 2px rgba(255, 255, 255, 1),
+    inset 0 -1px 2px rgba(219, 234, 254, 0.5);
+
+  animation: milkToastPopIn 0.38s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease, opacity 0.2s ease;
+}
+
+.milk-toast-card:hover {
+  transform: translateY(-2px) scale(1.01);
+  box-shadow: 
+    0 24px 48px -10px rgba(15, 34, 64, 0.22),
+    0 10px 22px -6px rgba(37, 99, 235, 0.2),
+    inset 0 1px 2px rgba(255, 255, 255, 1);
+}
+
+.milk-toast-card:active {
+  transform: scale(0.98);
+}
+
+@keyframes milkToastPopIn {
+  0% {
+    opacity: 0;
+    transform: translateY(-18px) scale(0.94);
+  }
+  70% {
+    transform: translateY(2px) scale(1.01);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Ambient Milk Surface Sheen Reflection */
+.milk-toast-ambient {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: radial-gradient(
+    ellipse at 30% 0%,
+    rgba(255, 255, 255, 0.85) 0%,
+    rgba(255, 255, 255, 0) 75%
+  );
+  pointer-events: none;
+}
+
+/* Icon Squircle Badge */
+.milk-toast-icon-wrapper {
+  position: relative;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+}
+
+.icon-milk {
+  background: linear-gradient(135deg, #e0f2fe 0%, #bfdbfe 100%);
+  color: #0284c7;
+}
+
+.icon-success {
+  background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+  color: #16a34a;
+}
+
+.icon-error {
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  color: #dc2626;
+}
+
+.icon-info {
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  color: #2563eb;
+}
+
+.icon-warning {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  color: #d97706;
+}
+
+.milk-toast-icon {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.08));
+}
+
+/* Toast Message Body - Clear, Important Only */
+.milk-toast-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.milk-toast-title {
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+  line-height: 1.2;
+}
+
+.milk-toast-msg {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #0f274a;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+  word-break: break-word;
+}
+
+/* Close Pill */
+.milk-toast-close {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 9px;
+  background: rgba(241, 245, 249, 0.85);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.milk-toast-close:hover {
+  background: #ffffff;
+  color: #0f172a;
+}
+
+/* Bottom Countdown Shimmer Timer Bar */
+.milk-toast-timer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  width: 100%;
+  background: linear-gradient(90deg, #38bdf8 0%, #2563eb 50%, #60a5fa 100%);
+  border-radius: 0 0 20px 20px;
+  transform-origin: left;
+  animation: milkTimerShrink linear forwards;
+}
+
+.toast-success .milk-toast-timer {
+  background: linear-gradient(90deg, #4ade80 0%, #16a34a 100%);
+}
+
+.toast-error .milk-toast-timer {
+  background: linear-gradient(90deg, #f87171 0%, #dc2626 100%);
+}
+
+.toast-warning .milk-toast-timer {
+  background: linear-gradient(90deg, #fbbf24 0%, #d97706 100%);
+}
+
+@keyframes milkTimerShrink {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+

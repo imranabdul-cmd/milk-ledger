@@ -10,6 +10,7 @@ import { UpdateRateModal } from '../components/UpdateRateModal';
 import { CorrectionModal, EditableMilkRecord } from '../components/CorrectionModal';
 import { formatDisplayMonthYear, formatDisplayDate, getKolkataTodayDateString } from '../utils/dateFormatter';
 import { useAutoSync, notifyDataChanged } from '../hooks/useAutoSync';
+import { useToast } from '../context/ToastContext';
 import {
   Droplets,
   Calendar,
@@ -40,6 +41,7 @@ interface DashboardPageProps {
 export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToTab }) => {
   const { t, language } = useLanguage();
   const { user } = useAuth();
+  const { toast } = useToast();
   const isAdmin = user?.role === 'admin' || user?.role === 'owner';
 
   // Current Kolkata date and month
@@ -124,7 +126,9 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToTab })
 
   const handleDeleteActivity = async (act: any) => {
     if (!isAdmin) {
-      alert(language === 'ta' ? 'அட்மின்களுக்கு மட்டுமே இந்த அனுமதியுள்ளது' : language === 'ml' ? 'അഡ്മിന് മാത്രമേ അനുവാദമുള്ളൂ' : 'Admin privilege required');
+      toast.warning(
+        language === 'ta' ? 'அட்மின்களுக்கு மட்டுமே அனுமதி உண்டு' : language === 'ml' ? 'അഡ്മിന് മാത്രമേ അനുവാദമുള്ളൂ' : 'Admin privilege required'
+      );
       return;
     }
 
@@ -139,8 +143,19 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToTab })
       await apiRequest(url, { method: 'DELETE' });
       fetchSummary(true);
       notifyDataChanged();
+      if (act.type === 'purchase') {
+        toast.milk(
+          language === 'ta' ? 'பால் பதிவு நீக்கப்பட்டது' : language === 'ml' ? 'പാൽ രേഖ നീക്കം ചെയ്തു' : 'Milk record removed'
+        );
+      } else {
+        toast.success(
+          language === 'ta' ? 'பணப் பதிவு நீக்கப்பட்டது' : language === 'ml' ? 'പേയ്മെന്റ് നീക്കം ചെയ്തു' : 'Payment record removed'
+        );
+      }
     } catch (err: any) {
-      alert(err.message || 'Failed to delete record');
+      toast.error(
+        err.message || (language === 'ta' ? 'நீக்க முடியவில்லை' : language === 'ml' ? 'നീക്കം ചെയ്യാൻ കഴിഞ്ഞില്ല' : 'Failed to delete record')
+      );
     }
   };
 

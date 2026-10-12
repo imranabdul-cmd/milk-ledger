@@ -7,10 +7,12 @@ import { ExportBillModal } from '../components/ExportBillModal';
 import { FileText, FileSpreadsheet, Lock, Calendar } from 'lucide-react';
 import { formatDisplayMonthYear } from '../utils/dateFormatter';
 import { useAutoSync, notifyDataChanged } from '../hooks/useAutoSync';
+import { useToast } from '../context/ToastContext';
 
 export const MonthlySettlementPage: React.FC = () => {
   const { t, language } = useLanguage();
   const { user } = useAuth();
+  const { toast } = useToast();
 
   const currentMonthStr = new Date().toISOString().substring(0, 7);
   const [selectedMonth, setSelectedMonth] = useState<string>(currentMonthStr);
@@ -55,11 +57,15 @@ export const MonthlySettlementPage: React.FC = () => {
           notes: `Official month close by ${user?.name || 'Admin'}`
         }),
       });
-      alert(language === 'ml' ? 'മാസത്തെ കണക്ക് ഫ്രീസ് ചെയ്തു!' : language === 'ta' ? 'மாத கணக்கு வெற்றிகரமாக முடிக்கப்பட்டது!' : 'Month statement officially closed!');
+      toast.success(
+        language === 'ml' ? 'മാസത്തെ കണക്ക് ഫ്രീസ് ചെയ്തു!' : language === 'ta' ? 'மாத கணக்கு முடிக்கப்பட்டது!' : 'Month statement closed!'
+      );
       fetchSettlementData(true);
       notifyDataChanged();
     } catch (err: any) {
-      alert(err.message || 'Failed to close month');
+      toast.error(
+        err.message || (language === 'ta' ? 'முடிக்க முடியவில்லை' : language === 'ml' ? 'പരാജയപ്പെട്ടു' : 'Failed to close month')
+      );
     } finally {
       setIsClosing(false);
     }

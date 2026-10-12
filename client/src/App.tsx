@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { LanguageProvider } from './context/LanguageContext';
 import { VoiceProvider } from './context/VoiceContext';
+import { ToastProvider } from './context/ToastContext';
 import { Header } from './components/Header';
 import { MobileNav } from './components/MobileNav';
 import { LoginPage } from './pages/LoginPage';
@@ -107,9 +108,11 @@ export const App: React.FC = () => {
     <ErrorBoundary>
       <LanguageProvider>
         <AuthProvider>
-          <VoiceProvider>
-            <AppContent />
-          </VoiceProvider>
+          <ToastProvider>
+            <VoiceProvider>
+              <AppContent />
+            </VoiceProvider>
+          </ToastProvider>
         </AuthProvider>
       </LanguageProvider>
     </ErrorBoundary>

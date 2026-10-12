@@ -21,10 +21,12 @@ import {
 } from 'lucide-react';
 import { DateTimeBadge } from '../components/DateTimeBadge';
 import { useAutoSync, notifyDataChanged } from '../hooks/useAutoSync';
+import { useToast } from '../context/ToastContext';
 
 export const MembersPage: React.FC = () => {
   const { t, language } = useLanguage();
   const { user } = useAuth();
+  const { toast } = useToast();
 
   const isOwner = user?.role === 'owner';
   const isPrivileged = user?.role === 'owner' || user?.role === 'admin';
@@ -150,8 +152,13 @@ export const MembersPage: React.FC = () => {
         }),
       });
       fetchData();
+      toast.success(
+        isDeactivating
+          ? (language === 'ta' ? 'உறுப்பினர் முடக்கப்பட்டது' : language === 'ml' ? 'അംഗം നിർജ്ജീവമാക്കി' : 'Member deactivated')
+          : (language === 'ta' ? 'உறுப்பினர் செயல்படுத்தப்பட்டது' : language === 'ml' ? 'അംഗം സജീവമാക്കി' : 'Member activated')
+      );
     } catch (err: any) {
-      alert(err.message || 'Failed to update member status');
+      toast.error(err.message || 'Failed to update member status');
     }
   };
 
@@ -179,8 +186,11 @@ export const MembersPage: React.FC = () => {
       });
 
       fetchData();
+      toast.success(
+        language === 'ta' ? 'புதிய PIN உருவாக்கப்பட்டது' : language === 'ml' ? 'പുതിയ പിൻ നൽകി' : 'Temporary PIN generated'
+      );
     } catch (err: any) {
-      alert(err.message || 'Failed to reset PIN');
+      toast.error(err.message || 'Failed to reset PIN');
     }
   };
 
@@ -238,12 +248,16 @@ export const MembersPage: React.FC = () => {
         }),
       });
 
-      alert(language === 'ml' ? 'പിൻ നമ്പർ വിജയകരമായി മാറ്റി!' : language === 'ta' ? 'PIN எண் மாற்றப்பட்டது!' : 'PIN updated successfully!');
+      toast.success(
+        language === 'ml' ? 'പിൻ നമ്പർ വിജയകരമായി മാറ്റി!' : language === 'ta' ? 'PIN எண் மாற்றப்பட்டது!' : 'PIN updated successfully!'
+      );
       setIsChangingPin(false);
       setCurrentPin('');
       setNewPin('');
     } catch (err: any) {
-      setChangePinError(err.message || 'Failed to change PIN');
+      const errTxt = err.message || 'Failed to change PIN';
+      setChangePinError(errTxt);
+      toast.error(errTxt);
     } finally {
       setIsSubmittingPin(false);
     }
@@ -254,7 +268,7 @@ export const MembersPage: React.FC = () => {
     e.preventDefault();
     const rateRupees = parseFloat(newRateRupees);
     if (isNaN(rateRupees) || rateRupees <= 0) {
-      alert(t('invalidNumber'));
+      toast.warning(t('invalidNumber'));
       return;
     }
 
@@ -268,12 +282,14 @@ export const MembersPage: React.FC = () => {
         }),
       });
 
-      alert(language === 'ml' ? 'പുതിയ നിരക്ക് സേവ് ചെയ്തു!' : language === 'ta' ? 'புதிய விலை சேமிக்கப்பட்டது!' : 'New rate added successfully!');
+      toast.milk(
+        language === 'ml' ? `പുതിയ നിരക്ക് ₹${rateRupees}/L സേവ് ചെയ്തു!` : language === 'ta' ? `புதிய பால் விலை ₹${rateRupees}/L சேமிக்கப்பட்டது!` : `New rate ₹${rateRupees}/L saved!`
+      );
       setIsAddingRate(false);
       fetchData();
       notifyDataChanged();
     } catch (err: any) {
-      alert(err.message || 'Failed to add rate');
+      toast.error(err.message || 'Failed to add rate');
     }
   };
 

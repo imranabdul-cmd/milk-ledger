@@ -5,6 +5,7 @@ import { PaymentMethod, rupeesToPaise } from '@family-milk/shared';
 import { X, CreditCard, AlertCircle } from 'lucide-react';
 import { getKolkataTodayDateString } from '../utils/dateFormatter';
 import { notifyDataChanged } from '../hooks/useAutoSync';
+import { useToast } from '../context/ToastContext';
 
 interface PaymentModalProps {
   isOpen: boolean;
@@ -20,6 +21,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   defaultAmountRupees = 0,
 }) => {
   const { t, language } = useLanguage();
+  const { toast } = useToast();
 
   const todayStr = getKolkataTodayDateString();
   const [date, setDate] = useState<string>(todayStr);
@@ -59,6 +61,9 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
         }),
       });
 
+      toast.success(
+        language === 'ta' ? `₹${amountRupees} பணம் பதிவு செய்யப்பட்டது` : language === 'ml' ? `₹${amountRupees} പേയ്മെന്റ് രേഖപ്പെടുത്തി` : `₹${amountRupees} Payment Recorded`
+      );
       onSuccess();
       notifyDataChanged();
       onClose();
