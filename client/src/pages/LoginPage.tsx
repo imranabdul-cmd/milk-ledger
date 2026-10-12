@@ -1,4 +1,4 @@
-﻿import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import {
@@ -253,12 +253,12 @@ export const LoginPage: React.FC = () => {
         {error && (
           <div
             style={{
-              background: '#fef2f2',
-              color: '#991b1b',
-              border: '1.5px solid #fecaca',
+              background: 'rgba(239, 68, 68, 0.2)',
+              color: '#fecaca',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
               padding: '0.75rem 1rem',
               borderRadius: '14px',
-              marginBottom: '1.25rem',
+              marginBottom: '1rem',
               display: 'flex',
               alignItems: 'center',
               gap: '0.55rem',
@@ -267,7 +267,7 @@ export const LoginPage: React.FC = () => {
               animation: 'fadeIn 0.2s ease'
             }}
           >
-            <AlertCircle size={18} color="#dc2626" style={{ flexShrink: 0 }} />
+            <AlertCircle size={18} color="#fca5a5" style={{ flexShrink: 0 }} />
             <span>{error}</span>
           </div>
         )}
@@ -278,7 +278,7 @@ export const LoginPage: React.FC = () => {
           {mode === 'create_family' && (
             <>
               <div className="login-input-group">
-                <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem', fontWeight: 700, color: '#334155', marginBottom: '0.35rem' }}>
+                <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem', fontWeight: 700, color: '#1e293b', marginBottom: '0.35rem' }}>
                   <Home size={15} color="#2563eb" />
                   <span>{t('familyNameLabel')}</span>
                 </label>
@@ -298,7 +298,7 @@ export const LoginPage: React.FC = () => {
               </div>
 
               <div className="login-input-group">
-                <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem', fontWeight: 700, color: '#334155', marginBottom: '0.35rem' }}>
+                <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem', fontWeight: 700, color: '#1e293b', marginBottom: '0.35rem' }}>
                   <User size={15} color="#2563eb" />
                   <span>{t('ownerNameLabel')}</span>
                 </label>
@@ -318,7 +318,7 @@ export const LoginPage: React.FC = () => {
               </div>
 
               <div className="login-input-group">
-                <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem', fontWeight: 700, color: '#334155', marginBottom: '0.35rem' }}>
+                <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem', fontWeight: 700, color: '#1e293b', marginBottom: '0.35rem' }}>
                   <DollarSign size={15} color="#2563eb" />
                   <span>{t('initialRateLabel')}</span>
                 </label>
@@ -350,7 +350,7 @@ export const LoginPage: React.FC = () => {
                 gap: '0.4rem',
                 fontSize: '0.85rem',
                 fontWeight: 700,
-                color: '#334155',
+                color: '#1e293b',
                 marginBottom: '0.35rem'
               }}
             >
@@ -389,7 +389,7 @@ export const LoginPage: React.FC = () => {
                   gap: '0.4rem',
                   fontSize: '0.85rem',
                   fontWeight: 700,
-                  color: '#334155',
+                  color: '#1e293b',
                   margin: 0
                 }}
               >
@@ -415,7 +415,7 @@ export const LoginPage: React.FC = () => {
                 }}
               >
                 {showPin ? <EyeOff size={14} /> : <Eye size={14} />}
-                <span>{showPin ? (language === 'ta' ? 'மறை' : language === 'ml' ? 'മറയ്ക്കുക' : 'Hide') : (language === 'ta' ? 'காட்டு' : language === 'ml' ? 'കാണിക്കുക' : 'Show')}</span>
+                <span>{showPin ? (language === 'ta' ? 'மறை' : language === 'ml' ? 'മറയ്ക്കുക' : 'Hide') : (language === 'ta' ? 'காட்டு' : language === 'ml' ? 'காണിക്കുക' : 'Show')}</span>
               </button>
             </div>
 
@@ -465,7 +465,7 @@ export const LoginPage: React.FC = () => {
 
         {/* Security Reassurance Trust Badge */}
         <div className="login-trust-badge">
-          <ShieldCheck size={16} color="#15803d" style={{ flexShrink: 0 }} />
+          <ShieldCheck size={16} color="#16a34a" style={{ flexShrink: 0 }} />
           <span style={{ fontWeight: 700 }}>
             {t('persistentLoginNote')}
           </span>
