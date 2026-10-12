@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import {
-  Milk,
   Lock,
   Phone,
   Globe,
@@ -115,20 +114,18 @@ export const LoginPage: React.FC = () => {
       <header className="login-top-nav">
         {/* Brand Pill */}
         <div className="login-brand-pill">
-          <div
+          <img
+            src="/branding/apple-touch-icon.png"
+            alt="Family Milk Account Logo"
             style={{
               width: '28px',
               height: '28px',
-              borderRadius: '50%',
-              background: 'linear-gradient(135deg, #2563eb, #38bdf8)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 2px 8px rgba(37,99,235,0.4)'
+              borderRadius: '8px',
+              objectFit: 'contain',
+              boxShadow: '0 2px 8px rgba(37,99,235,0.4)',
+              display: 'block'
             }}
-          >
-            <Milk size={15} color="white" />
-          </div>
+          />
           <span style={{ fontWeight: 800, fontSize: '0.9rem', letterSpacing: '-0.01em' }}>
             Family Milk
           </span>
@@ -226,8 +223,26 @@ export const LoginPage: React.FC = () => {
         {/* Brand Logo & Headline */}
         <div style={{ textAlign: 'center', marginBottom: '1.4rem' }}>
           {/* Logo with Soft Gradient Glow */}
-          <div className="login-logo-glow">
-            <Milk size={34} color="white" />
+          <div
+            className="login-logo-glow"
+            style={{
+              overflow: 'hidden',
+              padding: '2px',
+              background: 'transparent',
+              boxShadow: '0 10px 24px rgba(37, 99, 235, 0.35), 0 0 0 2px rgba(255, 255, 255, 0.85)'
+            }}
+          >
+            <img
+              src="/branding/icon-192.png"
+              alt="Family Milk Account Logo"
+              style={{
+                width: '100%',
+                height: '100%',
+                borderRadius: '18px',
+                objectFit: 'contain',
+                display: 'block'
+              }}
+            />
           </div>
 
           {/* Micro Tagline Pill */}

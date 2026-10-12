@@ -1,15 +1,24 @@
 // High-performance Network-First Service Worker for PWA
 // Guarantees user ALWAYS gets the latest fresh dashboard, with offline fallback
-const CACHE_NAME = 'family-milk-v5-realtime';
+const CACHE_NAME = 'family-milk-v6-brand-logo';
 
 const STATIC_FALLBACK_ASSETS = [
   '/',
   '/index.html',
   '/manifest.json',
   '/favicon.png',
+  '/favicon-16x16.png',
+  '/favicon-32x32.png',
   '/icon-192.png',
   '/icon-512.png',
-  '/apple-touch-icon.png'
+  '/apple-touch-icon.png',
+  '/branding/family-milk-app-icon-original.png',
+  '/branding/favicon-32x32.png',
+  '/branding/favicon-16x16.png',
+  '/branding/apple-touch-icon.png',
+  '/branding/icon-192.png',
+  '/branding/icon-512.png',
+  '/branding/icon-maskable-512.png'
 ];
 
 // 1. Install Event: Cache fallback shell and skip waiting immediately

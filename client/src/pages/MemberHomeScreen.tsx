@@ -29,7 +29,6 @@ import {
 import { ExportBillModal } from '../components/ExportBillModal';
 import { CorrectionModal } from '../components/CorrectionModal';
 import { DateTimeBadge } from '../components/DateTimeBadge';
-import { AnimatedMilkGlass } from '../components/Header';
 import { useAutoSync, notifyDataChanged } from '../hooks/useAutoSync';
 import { useToast } from '../context/ToastContext';
 
@@ -381,8 +380,18 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
 
           <div className="simple-header-content">
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-              <div style={{ filter: 'drop-shadow(0 2px 4px rgba(37,99,235,0.25))' }}>
-                <AnimatedMilkGlass size={28} />
+              <div style={{ filter: 'drop-shadow(0 2px 6px rgba(37,99,235,0.3))' }}>
+                <img
+                  src="/branding/apple-touch-icon.png"
+                  alt="Family Milk Account Logo"
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: 9,
+                    objectFit: 'contain',
+                    display: 'block'
+                  }}
+                />
               </div>
               <div>
                 <div style={{ fontSize: '0.74rem', color: '#475569', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.02em' }}>

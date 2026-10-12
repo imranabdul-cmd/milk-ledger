@@ -15,7 +15,6 @@ import {
   Phone,
   Check
 } from 'lucide-react';
-import { AnimatedMilkGlass } from './Header';
 
 interface MobileDrawerProps {
   isOpen: boolean;
@@ -77,8 +76,12 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
         {/* Drawer Header with Close Button */}
         <div className="drawer-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-            <div style={{ width: 34, height: 34, borderRadius: 10, background: 'rgba(37,99,235,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <AnimatedMilkGlass size={22} />
+            <div style={{ width: 34, height: 34, borderRadius: 10, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 6px rgba(37,99,235,0.2)' }}>
+              <img
+                src="/branding/apple-touch-icon.png"
+                alt="Family Milk Account Logo"
+                style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: 10 }}
+              />
             </div>
             <div>
               <div style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--slate-900)' }}>

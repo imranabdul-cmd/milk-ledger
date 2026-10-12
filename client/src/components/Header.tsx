@@ -150,9 +150,19 @@ export const Header: React.FC<HeaderProps> = ({ currentTab, onTabChange, onSwitc
       {/* Full-Width Responsive Header Content */}
       <div className="header-container">
         {/* Brand Section on the Far Left */}
-        <div className="brand-section" onClick={() => onTabChange('dashboard')}>
-          <div className="brand-icon-wrapper">
-            <AnimatedMilkGlass size={30} />
+        <div className="brand-section" onClick={() => onTabChange('dashboard')} title="Family Milk Account">
+          <div className="brand-icon-wrapper" style={{ padding: '3px' }}>
+            <img
+              src="/branding/apple-touch-icon.png"
+              alt="Family Milk Account Logo"
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: 10,
+                objectFit: 'contain',
+                display: 'block'
+              }}
+            />
           </div>
           <div className="brand-title-group">
             <h1 className="brand-main-title">Family Milk</h1>
