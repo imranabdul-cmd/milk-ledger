@@ -27,7 +27,7 @@ export const LoginPage: React.FC = () => {
   const [mode, setMode] = useState<AuthMode>('login');
 
   // Common Fields
-  const [phone, setPhone] = useState<string>('9952590815');
+  const [phone, setPhone] = useState<string>('');
   const [pin, setPin] = useState<string>('');
   const [showPin, setShowPin] = useState<boolean>(false);
   const [name, setName] = useState<string>('');

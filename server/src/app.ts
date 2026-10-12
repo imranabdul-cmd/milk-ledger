@@ -74,14 +74,14 @@ export function createApp(): Express {
   app.use('/api/audit', auditRouter);
 
   // 7. Client static assets and SPA fallback
-  const clientDistPath = path.resolve(__dirname, '../../../client/dist');
-  const clientDistPathLocal = path.resolve(__dirname, '../../client/dist');
+  const distCandidates = [
+    path.resolve(__dirname, '../../client/dist'),
+    path.resolve(__dirname, '../../../client/dist'),
+    path.resolve(process.cwd(), 'client/dist'),
+    path.resolve(process.cwd(), '../client/dist'),
+  ];
 
-  let activeDistPath = fs.existsSync(clientDistPath)
-    ? clientDistPath
-    : fs.existsSync(clientDistPathLocal)
-    ? clientDistPathLocal
-    : null;
+  const activeDistPath = distCandidates.find((candidate) => fs.existsSync(candidate)) || null;
 
   if (activeDistPath) {
     app.use(express.static(activeDistPath));
@@ -89,7 +89,7 @@ export function createApp(): Express {
       if (req.path.startsWith('/api')) {
         return next();
       }
-      res.sendFile(path.join(activeDistPath!, 'index.html'));
+      res.sendFile(path.join(activeDistPath, 'index.html'));
     });
   }
 

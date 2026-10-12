@@ -7,7 +7,7 @@ services:
     env: node
     plan: free
     region: singapore # or ohio / oregon / frankfurt
-    buildCommand: npm install && npm run build
+    buildCommand: npm ci && npm --prefix client ci && npm --prefix server ci && npm run build
     startCommand: npm run start
     healthCheckPath: /api/health
     envVars:
@@ -24,5 +24,4 @@ services:
         sync: false # Set securely in Render dashboard
       - key: JWT_SECRET
         generateValue: true # Render automatically generates a cryptographically secure 256-bit secret
-      - key: INITIAL_ADMIN_PIN
-        value: "1234"
+
