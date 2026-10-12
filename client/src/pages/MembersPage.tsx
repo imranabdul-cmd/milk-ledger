@@ -26,7 +26,7 @@ import { useToast } from '../context/ToastContext';
 export const MembersPage: React.FC = () => {
   const { t, language } = useLanguage();
   const { user } = useAuth();
-  const { toast } = useToast();
+  const { toast, confirm } = useToast();
 
   const isOwner = user?.role === 'owner';
   const isPrivileged = user?.role === 'owner' || user?.role === 'admin';
@@ -142,7 +142,14 @@ export const MembersPage: React.FC = () => {
       ? t('deactivateConfirm')
       : t('reactivateConfirm');
 
-    if (!window.confirm(confirmMsg)) return;
+    const ok = await confirm({
+      title: isDeactivating ? t('deactivateMemberTitle') : t('activateMemberTitle'),
+      message: confirmMsg,
+      confirmText: isDeactivating ? t('deactivate') : t('activate'),
+      cancelText: t('cancel'),
+      type: isDeactivating ? 'danger' : 'info',
+    });
+    if (!ok) return;
 
     try {
       await apiRequest(`/api/family/members/${member.id}`, {
@@ -164,7 +171,14 @@ export const MembersPage: React.FC = () => {
 
   // Handle Admin Reset PIN
   const handleResetPin = async (member: FamilyMember) => {
-    if (!window.confirm(t('resetPinConfirm'))) return;
+    const ok = await confirm({
+      title: t('resetPinConfirmTitle'),
+      message: t('resetPinConfirm'),
+      confirmText: t('resetPin'),
+      cancelText: t('cancel'),
+      type: 'warning',
+    });
+    if (!ok) return;
 
     try {
       const res = await apiRequest<{

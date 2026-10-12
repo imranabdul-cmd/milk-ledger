@@ -42,7 +42,7 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
   const { user, logout, updateUserLanguage } = useAuth();
   const { language, setLanguage, t } = useLanguage();
   const { voiceEnabled, toggleVoice, speakText } = useVoice();
-  const { toast } = useToast();
+  const { toast, confirm } = useToast();
 
   const isPrivileged = user?.role === 'owner' || user?.role === 'admin';
 
@@ -150,7 +150,14 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
 
   const handleDeleteTodayEntry = async (id: string) => {
     if (!isPrivileged) return;
-    if (!window.confirm(t('deleteConfirm'))) return;
+    const ok = await confirm({
+      title: t('deleteConfirmTitle'),
+      message: t('deleteConfirm'),
+      confirmText: t('deleteAction'),
+      cancelText: t('cancel'),
+      type: 'danger',
+    });
+    if (!ok) return;
     try {
       await apiRequest(`/api/milk/entries/${id}`, { method: 'DELETE' });
       fetchData();
@@ -178,6 +185,11 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
 
   // Handle Quantity Selection
   const handleSelectQuantity = (ml: number) => {
+    if (ml === 0) {
+      handleRecordNoMilkToday();
+      return;
+    }
+
     setSelectedQuantityMl(ml);
     setSubmitError(null);
     setStep('choose_payment');
@@ -271,8 +283,18 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
   const handleRecordNoMilkToday = async () => {
     if (isSubmitting) return;
 
-    const confirmMsg = t('confirmNoMilkPrompt');
-    if (!window.confirm(confirmMsg)) return;
+    const ok = await confirm({
+      title: language === 'ta' ? 'இன்று பால் வாங்கவில்லையா?' : language === 'ml' ? 'ഇന്ന് പാൽ വാങ്ങിയില്ലേ?' : 'No Milk Taken Today?',
+      message: language === 'ta'
+        ? `இன்று (${friendlyTodayDate}) பால் வாங்கவில்லை (0 L) என்பதை உறுதிப்படுத்துகிறீர்களா?`
+        : language === 'ml'
+        ? `ഇന്ന് (${friendlyTodayDate}) പാൽ വാങ്ങിയില്ല (0 L) എന്ന് ഉറപ്പാണോ?`
+        : `Are you sure you didn't buy milk today (${friendlyTodayDate})?`,
+      confirmText: language === 'ta' ? 'ஆம், வாங்கவில்லை' : language === 'ml' ? 'അതെ, വാങ്ങിയില്ല' : 'Yes, Confirm',
+      cancelText: t('cancel'),
+      type: 'milk',
+    });
+    if (!ok) return;
 
     setIsSubmitting(true);
     setSubmitError(null);
@@ -369,24 +391,26 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
       <div className="simple-view-content">
         {/* COMPACT & ACCESSIBLE FROSTED TOP HEADER WITH VIDEO & ANIMATED MILK GLASS */}
         <header className="simple-header-pill">
-          {/* Background Looping Milk Video */}
-          <video
-            ref={headerVideoRef}
-            className="simple-header-video"
-            autoPlay
-            loop
-            muted
-            playsInline
-            preload="auto"
-            aria-hidden="true"
-          >
-            <source src="/videos/simple_header_video.mp4" type="video/mp4" />
-          </video>
-          <div className="simple-header-video-overlay" />
+          {/* Background Looping Milk Video Wrapper (isolated overflow:hidden so pill clips video without cutting off language dropdown) */}
+          <div className="simple-header-video-wrapper">
+            <video
+              ref={headerVideoRef}
+              className="simple-header-video"
+              autoPlay
+              loop
+              muted
+              playsInline
+              preload="auto"
+              aria-hidden="true"
+            >
+              <source src="/videos/simple_header_video.mp4" type="video/mp4" />
+            </video>
+            <div className="simple-header-video-overlay" />
+          </div>
 
           <div className="simple-header-content">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-              <div style={{ filter: 'drop-shadow(0 2px 6px rgba(37,99,235,0.3))' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', minWidth: 0, flex: 1 }}>
+              <div style={{ filter: 'drop-shadow(0 2px 6px rgba(37,99,235,0.3))', flexShrink: 0 }}>
                 <img
                   src="/branding/apple-touch-icon.png"
                   alt="Family Milk Account Logo"
@@ -399,38 +423,35 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
                   }}
                 />
               </div>
-              <div>
-                <div style={{ fontSize: '0.74rem', color: '#475569', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.02em' }}>
+              <div style={{ minWidth: 0, overflow: 'hidden' }}>
+                <div style={{ fontSize: '0.70rem', color: '#475569', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.02em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   {user?.familyName || 'Family Milk'}
                 </div>
-                <h1 style={{ fontSize: '1.15rem', fontWeight: 900, color: '#1e3a8a', lineHeight: 1.2 }}>
+                <h1 style={{ fontSize: '1.05rem', fontWeight: 900, color: '#1e3a8a', lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   {language === 'ml' ? `നമസ്കാരം, ${user?.name || ''}` : language === 'ta' ? `வணக்கம், ${user?.name || ''}` : `Hello, ${user?.name || ''}`}
                 </h1>
               </div>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexShrink: 0 }}>
               {/* Voice Guidance Toggle */}
               <button
                 type="button"
                 onClick={toggleVoice}
-                className="btn-secondary"
+                className="simple-header-btn"
                 style={{
-                  padding: '0.42rem 0.65rem',
+                  padding: '0.42rem 0.62rem',
                   borderRadius: '9999px',
-                  border: voiceEnabled ? '1.5px solid #2563eb' : '1.5px solid #cbd5e1',
-                  background: voiceEnabled ? 'rgba(239, 246, 255, 0.95)' : 'rgba(255, 255, 255, 0.92)',
                   color: voiceEnabled ? '#1d4ed8' : '#64748b',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '0.25rem',
                   cursor: 'pointer',
-                  backdropFilter: 'blur(8px)',
                 }}
                 title={voiceEnabled ? t('voiceOn') : t('voiceOff')}
               >
-                {voiceEnabled ? <Volume2 size={16} color="#2563eb" /> : <VolumeX size={16} color="#94a3b8" />}
-                <span style={{ fontSize: '0.74rem', fontWeight: 700 }}>
+                {voiceEnabled ? <Volume2 size={15} color="#2563eb" /> : <VolumeX size={15} color="#94a3b8" />}
+                <span style={{ fontSize: '0.72rem', fontWeight: 700 }}>
                   {voiceEnabled ? t('voiceOn') : t('voiceOff')}
                 </span>
               </button>
@@ -440,38 +461,27 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
                 <button
                   type="button"
                   onClick={() => setIsLangDropdownOpen(!isLangDropdownOpen)}
-                  className="btn-secondary"
+                  className="simple-header-btn"
                   style={{
-                    padding: '0.42rem 0.65rem',
+                    padding: '0.42rem 0.62rem',
                     borderRadius: '9999px',
-                    border: '1.5px solid #cbd5e1',
-                    background: 'rgba(255, 255, 255, 0.92)',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '0.25rem',
                     cursor: 'pointer',
-                    backdropFilter: 'blur(8px)',
+                    color: '#1e3a8a',
                   }}
                   title={t('language')}
                 >
                   <Globe size={15} color="#2563eb" />
-                  <span style={{ fontSize: '0.76rem', fontWeight: 700 }}>
+                  <span style={{ fontSize: '0.74rem', fontWeight: 700 }}>
                     {language === 'ml' ? 'മലയാളം' : language === 'ta' ? 'தமிழ்' : 'English'}
                   </span>
                   <ChevronDown size={12} style={{ opacity: 0.7 }} />
                 </button>
 
                 {isLangDropdownOpen && (
-                  <div
-                    className="header-lang-dropdown"
-                    style={{
-                      position: 'absolute',
-                      top: 'calc(100% + 6px)',
-                      right: 0,
-                      zIndex: 200,
-                      minWidth: '150px'
-                    }}
-                  >
+                  <div className="header-lang-dropdown">
                     <button
                       type="button"
                       className={`header-lang-item ${language === 'en' ? 'active' : ''}`}
@@ -479,10 +489,11 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
                         setLanguage('en');
                         updateUserLanguage('en');
                         setIsLangDropdownOpen(false);
+                        toast.milk('Language changed to English');
                       }}
                     >
                       <span className="lang-item-name">English</span>
-                      {language === 'en' && <Check size={14} color="#2563eb" />}
+                      {language === 'en' && <Check size={15} color="#2563eb" strokeWidth={2.5} />}
                     </button>
                     <button
                       type="button"
@@ -491,10 +502,11 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
                         setLanguage('ta');
                         updateUserLanguage('ta');
                         setIsLangDropdownOpen(false);
+                        toast.milk('மொழி தமிழாக மாற்றப்பட்டது');
                       }}
                     >
                       <span className="lang-item-name">தமிழ் (Tamil)</span>
-                      {language === 'ta' && <Check size={14} color="#2563eb" />}
+                      {language === 'ta' && <Check size={15} color="#2563eb" strokeWidth={2.5} />}
                     </button>
                     <button
                       type="button"
@@ -503,10 +515,11 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
                         setLanguage('ml');
                         updateUserLanguage('ml');
                         setIsLangDropdownOpen(false);
+                        toast.milk('ഭാഷ മലയാളം ആയി മാറ്റി');
                       }}
                     >
                       <span className="lang-item-name">മലയാളം (Malayalam)</span>
-                      {language === 'ml' && <Check size={14} color="#2563eb" />}
+                      {language === 'ml' && <Check size={15} color="#2563eb" strokeWidth={2.5} />}
                     </button>
                   </div>
                 )}
@@ -515,14 +528,23 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
               {/* Simple Logout */}
               <button
                 type="button"
-                onClick={() => {
-                  if (window.confirm(t('logoutConfirm'))) logout();
+                onClick={async () => {
+                  const ok = await confirm({
+                    title: t('logoutConfirmTitle'),
+                    message: t('logoutConfirm'),
+                    confirmText: t('logoutAction') || t('logout'),
+                    cancelText: t('cancel'),
+                    type: 'logout',
+                  });
+                  if (ok) {
+                    logout();
+                    toast.info(t('loggedOut'));
+                  }
                 }}
+                className="simple-header-btn"
                 style={{
-                  background: 'rgba(255, 255, 255, 0.85)',
-                  border: '1.5px solid #cbd5e1',
-                  color: '#64748b',
-                  padding: '0.4rem',
+                  color: '#dc2626',
+                  padding: '0.42rem',
                   cursor: 'pointer',
                   borderRadius: '50%',
                   display: 'flex',
@@ -562,12 +584,11 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
             <button
               type="button"
               onClick={speakInstruction}
+              className="simple-header-btn"
               style={{
                 position: 'absolute',
                 top: '1.1rem',
                 right: '1.1rem',
-                background: '#eff6ff',
-                border: '1.5px solid #bfdbfe',
                 borderRadius: '50%',
                 width: '40px',
                 height: '40px',
@@ -576,7 +597,6 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
                 justifyContent: 'center',
                 color: '#2563eb',
                 cursor: 'pointer',
-                boxShadow: '0 2px 8px rgba(37,99,235,0.18)',
               }}
               title={t('listenInstructions')}
             >
@@ -686,22 +706,7 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
                 else if (language === 'ta') speakText('வேறு அளவைத் தேர்ந்தெடுக்கவும்');
                 else speakText('Choose other quantity');
               }}
-              style={{
-                width: '100%',
-                background: 'rgba(248, 250, 252, 0.9)',
-                border: '1.5px dashed #94a3b8',
-                borderRadius: '16px',
-                padding: '0.65rem',
-                fontSize: '0.92rem',
-                fontWeight: 700,
-                color: '#475569',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '0.4rem',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-              }}
+              className="simple-glass-other-btn"
             >
               <Droplets size={17} color="#2563eb" />
               <span>{t('otherQuantity')} ({t('otherQuantitySub')})</span>
@@ -712,23 +717,7 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
               type="button"
               onClick={handleRecordNoMilkToday}
               disabled={isSubmitting}
-              style={{
-                width: '100%',
-                marginTop: '0.65rem',
-                background: 'linear-gradient(135deg, rgba(254, 242, 242, 0.95) 0%, rgba(255, 247, 237, 0.95) 100%)',
-                border: '1.5px solid #fca5a5',
-                borderRadius: '16px',
-                padding: '0.75rem 1rem',
-                fontSize: '0.92rem',
-                fontWeight: 800,
-                color: '#b91c1c',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-                boxShadow: '0 2px 6px rgba(239, 68, 68, 0.08)',
-              }}
+              className="simple-glass-nomilk-btn"
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', textAlign: 'left' }}>
                 <span style={{ fontSize: '1.15rem' }}>🚫</span>
@@ -743,9 +732,9 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
               </div>
               <div
                 style={{
-                  background: '#fee2e2',
+                  background: 'rgba(254, 226, 226, 0.9)',
                   color: '#991b1b',
-                  padding: '0.2rem 0.65rem',
+                  padding: '0.22rem 0.75rem',
                   borderRadius: '9999px',
                   fontSize: '0.85rem',
                   fontWeight: 900,
@@ -759,7 +748,7 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
 
           {/* TODAY'S RECORDED MILK STATUS CARD */}
           <div className="simple-sub-card">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#0f172a', fontWeight: 800, fontSize: '0.95rem' }}>
                 <Calendar size={18} color="#2563eb" />
                 <span>{t('todayRecorded')}</span>
@@ -768,21 +757,13 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
             </div>
 
             {todayEntries.length > 0 ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
                 {todayEntries.map((entry) => {
                   const isNoMilk = entry.quantityMl === 0;
                   return (
                     <div
                       key={entry.id}
-                      style={{
-                        background: isNoMilk ? '#fff1f2' : '#f0fdf4',
-                        border: isNoMilk ? '1.5px solid #fecaca' : '1.5px solid #86efac',
-                        borderRadius: '14px',
-                        padding: '0.75rem 1rem',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                      }}
+                      className={isNoMilk ? "simple-glass-entry entry-nomilk" : "simple-glass-entry entry-milk"}
                     >
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
                         <div style={{ fontWeight: 800, color: isNoMilk ? '#be123c' : '#166534', fontSize: '1.05rem', display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap' }}>
@@ -795,7 +776,7 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
                           <DateTimeBadge date={entry.date} createdAt={entry.createdAt} />
                           {(entry.createdByName || user?.name) && (
-                            <span className="activity-user-pill" style={{ background: isNoMilk ? '#fff1f2' : '#f0fdf4', borderColor: isNoMilk ? '#fecaca' : '#bbf7d0', color: isNoMilk ? '#991b1b' : '#166534' }}>
+                            <span className="activity-user-pill" style={{ background: isNoMilk ? 'rgba(255, 241, 242, 0.9)' : 'rgba(240, 253, 244, 0.9)', borderColor: isNoMilk ? '#fecaca' : '#bbf7d0', color: isNoMilk ? '#991b1b' : '#166534' }}>
                               👤 {entry.createdByName || user?.name}
                             </span>
                           )}
@@ -822,9 +803,8 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
                               type="button"
                               onClick={() => setEditingEntry(entry)}
                               title="Edit"
+                              className="simple-header-btn"
                               style={{
-                                background: '#fff',
-                                border: '1px solid #cbd5e1',
                                 borderRadius: '8px',
                                 padding: '0.35rem',
                                 color: '#334155',
@@ -840,9 +820,8 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
                               type="button"
                               onClick={() => handleDeleteTodayEntry(entry.id)}
                               title="Delete"
+                              className="simple-header-btn"
                               style={{
-                                background: '#fff',
-                                border: '1px solid #fecaca',
                                 borderRadius: '8px',
                                 padding: '0.35rem',
                                 color: '#dc2626',
@@ -862,7 +841,7 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
                 })}
               </div>
             ) : (
-              <div style={{ background: '#f8fafc', padding: '0.85rem', borderRadius: '12px', textAlign: 'center', color: '#64748b', fontSize: '0.88rem' }}>
+              <div className="simple-glass-well" style={{ padding: '0.85rem', textAlign: 'center', color: '#64748b', fontSize: '0.88rem' }}>
                 {t('noMilkRecordedYet')}
               </div>
             )}
@@ -870,16 +849,7 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
 
           {/* PREVIOUS MONTH SETTLEMENT BANNER FOR MEMBER */}
           {prevSettlement && !prevSettlement.isSettled && prevSettlement.closingBalancePaise > 0 && !dismissedSettlementPrompt && (
-            <div
-              style={{
-                background: 'linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%)',
-                border: '2px solid #86efac',
-                borderRadius: '20px',
-                padding: '1.1rem 1.25rem',
-                marginBottom: '1.25rem',
-                boxShadow: '0 4px 16px rgba(5,150,105,0.12)'
-              }}
-            >
+            <div className="simple-glass-settlement-banner">
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '0.35rem' }}>
                 <span style={{ fontSize: '0.68rem', fontWeight: 800, background: '#dcfce7', color: '#166534', padding: '0.15rem 0.5rem', borderRadius: '999px', textTransform: 'uppercase' }}>
                   🌟 {t('prevMonthSettlementTitle')}
@@ -888,18 +858,18 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
                   {formatDisplayMonthYear(prevSettlement.previousMonth, language)}
                 </span>
               </div>
-              <div style={{ fontSize: '1rem', fontWeight: 800, color: '#0f172a', marginBottom: '0.2rem' }}>
+              <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#0f172a', marginBottom: '0.2rem' }}>
                 {t('prevMonthSettlementQuestion')}
               </div>
-              <div style={{ fontSize: '0.82rem', color: '#475569', marginBottom: '0.85rem' }}>
+              <div style={{ fontSize: '0.85rem', color: '#475569', marginBottom: '0.85rem' }}>
                 {t('totalSettledAmount')}: <strong style={{ color: '#047857' }}>{formatPaise(prevSettlement.closingBalancePaise)}</strong>
               </div>
 
               <div style={{ display: 'flex', gap: '0.6rem' }}>
                 <button
                   type="button"
-                  className="btn-secondary"
-                  style={{ flex: 1, padding: '0.55rem', borderRadius: '12px', fontSize: '0.85rem', fontWeight: 700 }}
+                  className="btn-secondary simple-header-btn"
+                  style={{ flex: 1, padding: '0.55rem', borderRadius: '14px', fontSize: '0.85rem', fontWeight: 700 }}
                   onClick={() => {
                     setDismissedSettlementPrompt(true);
                     toast.info(t('carriedForwardNote'));
@@ -909,16 +879,16 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
                 </button>
                 <button
                   type="button"
-                  className="btn-primary-big"
+                  className="btn-primary-big simple-header-btn"
                   style={{
                     flex: 1.5,
                     minHeight: '44px',
                     padding: '0.55rem',
-                    borderRadius: '12px',
+                    borderRadius: '14px',
                     fontSize: '0.9rem',
                     background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
                     borderColor: '#059669',
-                    boxShadow: '0 4px 12px rgba(5,150,105,0.25)'
+                    boxShadow: '0 4px 12px rgba(5,150,105,0.25)',
                   }}
                   onClick={() => setIsSettlementModalOpen(true)}
                 >
@@ -936,7 +906,7 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              marginBottom: '1.5rem',
+              marginBottom: '1.25rem',
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -944,12 +914,15 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
                 style={{
                   width: '44px',
                   height: '44px',
-                  borderRadius: '12px',
-                  background: closingBalancePaise > 0 ? '#fffbeb' : '#ecfdf5',
-                  color: closingBalancePaise > 0 ? '#d97706' : '#059669',
+                  borderRadius: '14px',
+                  background: closingBalancePaise > 0
+                    ? 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)'
+                    : 'linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%)',
+                  color: closingBalancePaise > 0 ? '#b45309' : '#15803d',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
+                  boxShadow: '0 4px 10px rgba(0,0,0,0.04)',
                 }}
               >
                 <Wallet size={22} />
@@ -966,13 +939,11 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
 
             <button
               type="button"
+              className="simple-header-btn"
               onClick={handleReadBalance}
               style={{
-                background: '#eff6ff',
-                border: '1px solid #bfdbfe',
-                borderRadius: '12px',
+                borderRadius: '14px',
                 padding: '0.5rem 0.75rem',
-                color: '#2563eb',
                 fontSize: '0.8rem',
                 fontWeight: 700,
                 display: 'flex',
@@ -988,30 +959,19 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
           </div>
 
           {/* APPA'S MONTHLY BILL EXPORT BANNER */}
-          <div
-            style={{
-              background: 'linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%)',
-              borderRadius: 'var(--radius-lg, 20px)',
-              padding: '0.9rem 1.1rem',
-              boxShadow: 'var(--shadow-sm)',
-              border: '1.5px solid #a7f3d0',
-              marginBottom: '1.5rem',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-            }}
-          >
+          <div className="simple-glass-bill-banner">
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
               <div
                 style={{
                   width: '38px',
                   height: '38px',
-                  borderRadius: '10px',
-                  background: '#059669',
+                  borderRadius: '12px',
+                  background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
                   color: 'white',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
+                  boxShadow: '0 4px 10px rgba(5,150,105,0.25)',
                 }}
               >
                 <FileSpreadsheet size={20} />
@@ -1028,7 +988,7 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
                   {language === 'ta'
                     ? 'வாட்ஸ்அப்பில் அனுப்ப & எக்செல் டவுன்லோட்'
                     : language === 'ml'
-                    ? 'വാട്സാപ്പിൽ അയക്കാനും എക്സൽ എടുക്കാനും'
+                    ? 'வாട്സാപ്പിൽ അയക്കാനും എക്സൽ എടുക്കാനും'
                     : 'Download .xlsx & share on WhatsApp'}
                 </div>
               </div>
@@ -1038,10 +998,10 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
               type="button"
               onClick={() => setIsExportModalOpen(true)}
               style={{
-                background: '#059669',
+                background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
                 border: 'none',
-                borderRadius: '12px',
-                padding: '0.55rem 0.85rem',
+                borderRadius: '14px',
+                padding: '0.55rem 0.95rem',
                 color: 'white',
                 fontSize: '0.82rem',
                 fontWeight: 700,
@@ -1049,7 +1009,7 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
                 alignItems: 'center',
                 gap: '0.35rem',
                 cursor: 'pointer',
-                boxShadow: '0 2px 6px rgba(5,150,105,0.25)',
+                boxShadow: '0 4px 12px rgba(5,150,105,0.28)',
               }}
             >
               <span>{t('exportBill')}</span>
@@ -1062,43 +1022,25 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
           CUSTOM QUANTITY KEYPAD (FOR OTHER QUANTITIES)
           ======================================================== */}
       {step === 'custom_quantity' && (
-        <div
-          style={{
-            background: 'white',
-            borderRadius: 'var(--radius-xl, 28px)',
-            padding: '1.5rem 1.25rem',
-            boxShadow: 'var(--shadow-card)',
-            border: '2px solid #2563eb',
-            marginBottom: '1.25rem',
-            textAlign: 'center',
-          }}
-        >
+        <div className="simple-glass-step-card">
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
             <button
               type="button"
               onClick={() => setStep('select_quantity')}
-              className="btn-secondary"
-              style={{ padding: '0.4rem 0.65rem', borderRadius: '10px' }}
+              className="btn-secondary simple-header-btn"
+              style={{ padding: '0.4rem 0.65rem', borderRadius: '12px' }}
             >
               <ArrowLeft size={16} />
               <span>{t('cancel')}</span>
             </button>
-            <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#1e3a8a' }}>
+            <h3 style={{ fontSize: '1.2rem', fontWeight: 900, color: '#1e3a8a' }}>
               {t('otherQuantity')}
             </h3>
             <div style={{ width: '40px' }} />
           </div>
 
           {/* Big Quantity Display */}
-          <div
-            style={{
-              background: '#eff6ff',
-              borderRadius: '20px',
-              padding: '1rem',
-              marginBottom: '1rem',
-              border: '1.5px solid #bfdbfe',
-            }}
-          >
+          <div className="simple-glass-well" style={{ marginBottom: '1rem', textAlign: 'center' }}>
             <div style={{ fontSize: '2.5rem', fontWeight: 900, color: '#1e40af' }}>
               {customMl >= 1000 ? `${(customMl / 1000).toFixed(2).replace('.00', '')} L` : `${customMl} ml`}
             </div>
@@ -1112,15 +1054,14 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
             <button
               type="button"
               onClick={() => setCustomMl((prev) => Math.max(100, prev - 250))}
+              className="simple-header-btn"
               style={{
                 flex: 1,
                 minHeight: '56px',
-                background: '#f1f5f9',
-                border: '1.5px solid #cbd5e1',
-                borderRadius: '16px',
-                fontSize: '1.2rem',
+                borderRadius: '18px',
+                fontSize: '1.15rem',
                 fontWeight: 800,
-                color: '#334155',
+                color: '#1e3a8a',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
@@ -1135,15 +1076,14 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
             <button
               type="button"
               onClick={() => setCustomMl((prev) => prev + 250)}
+              className="simple-header-btn"
               style={{
                 flex: 1,
                 minHeight: '56px',
-                background: '#f1f5f9',
-                border: '1.5px solid #cbd5e1',
-                borderRadius: '16px',
-                fontSize: '1.2rem',
+                borderRadius: '18px',
+                fontSize: '1.15rem',
                 fontWeight: 800,
-                color: '#334155',
+                color: '#1e3a8a',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
@@ -1164,14 +1104,17 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
                 type="button"
                 onClick={() => setCustomMl(preset)}
                 style={{
-                  padding: '0.6rem 0.2rem',
-                  borderRadius: '12px',
-                  background: customMl === preset ? '#2563eb' : '#f8fafc',
-                  color: customMl === preset ? 'white' : '#1e293b',
-                  border: customMl === preset ? '1.5px solid #1d4ed8' : '1px solid #cbd5e1',
-                  fontWeight: 700,
-                  fontSize: '0.85rem',
+                  padding: '0.65rem 0.2rem',
+                  borderRadius: '14px',
+                  background: customMl === preset ? 'linear-gradient(135deg, #1e40af 0%, #2563eb 100%)' : 'rgba(255, 255, 255, 0.75)',
+                  backdropFilter: 'blur(12px)',
+                  color: customMl === preset ? 'white' : '#1e3a8a',
+                  border: customMl === preset ? '1.5px solid #1d4ed8' : '1px solid rgba(255, 255, 255, 0.95)',
+                  fontWeight: 800,
+                  fontSize: '0.86rem',
                   cursor: 'pointer',
+                  boxShadow: customMl === preset ? '0 4px 12px rgba(37, 99, 235, 0.3)' : '0 2px 6px rgba(0,0,0,0.03)',
+                  transition: 'all 0.2s ease',
                 }}
               >
                 {preset >= 1000 ? `${preset / 1000} L` : `${preset} ml`}
@@ -1183,7 +1126,7 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
           <button
             type="button"
             className="btn-primary-big"
-            style={{ minHeight: '56px', width: '100%', fontSize: '1.15rem' }}
+            style={{ minHeight: '56px', width: '100%', fontSize: '1.15rem', borderRadius: '18px' }}
             onClick={() => handleSelectQuantity(customMl)}
           >
             {t('confirmAndSave')} (₹{((Math.round((customMl / 1000) * activeRatePaise)) / 100).toFixed(0)})
@@ -1195,23 +1138,14 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
           STEP 2: PAYMENT CHOICE (ONLY 2 ULTRA-CLEAR CHOICES)
           ======================================================== */}
       {step === 'choose_payment' && (
-        <div
-          style={{
-            background: 'white',
-            borderRadius: 'var(--radius-xl, 28px)',
-            padding: '1.5rem 1.25rem',
-            boxShadow: 'var(--shadow-card)',
-            border: '2.5px solid #2563eb',
-            marginBottom: '1.25rem',
-          }}
-        >
+        <div className="simple-glass-step-card">
           {/* Header & Back Button */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
             <button
               type="button"
               onClick={() => setStep('select_quantity')}
-              className="btn-secondary"
-              style={{ padding: '0.4rem 0.65rem', borderRadius: '10px' }}
+              className="btn-secondary simple-header-btn"
+              style={{ padding: '0.45rem 0.8rem', borderRadius: '14px', fontSize: '0.88rem' }}
             >
               <ArrowLeft size={16} />
               <span>{t('cancel')}</span>
@@ -1222,21 +1156,19 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
               onClick={() => {
                 const qty = selectedQuantityMl === 500
                   ? (language === 'ml' ? 'അര ലിറ്റർ' : language === 'ta' ? 'அரை லிட்டர்' : 'Half litre')
-                  : (language === 'ml' ? 'ഒരു ലിറ്റർ' : language === 'ta' ? 'ஒரு லிட்டர்' : 'One litre');
+                  : (language === 'ml' ? 'ഒരു ലിറ്റർ' : language === 'ta' ? 'ஒரு ലിറ്റർ' : 'One litre');
                 if (language === 'ml') speakText(`${qty} പാൽ. തുക ${calculatedRupees} രൂപ. പണം നൽകിയോ അതോ പിന്നെ നൽകുമോ?`, true);
                 else if (language === 'ta') speakText(`${qty} பால். தொகை ${calculatedRupees} ரூபாய். பணம் கொடுத்தாச்சா?`, true);
                 else speakText(`${qty} milk. Amount ${calculatedRupees} rupees. Paid now or pay later?`, true);
               }}
+              className="simple-header-btn"
               style={{
-                background: '#eff6ff',
-                border: '1px solid #bfdbfe',
                 borderRadius: '50%',
-                width: '38px',
-                height: '38px',
+                width: '42px',
+                height: '42px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: '#2563eb',
                 cursor: 'pointer',
               }}
               title={t('listenInstructions')}
@@ -1246,16 +1178,7 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
           </div>
 
           {/* Selected Summary Card */}
-          <div
-            style={{
-              background: '#eff6ff',
-              borderRadius: '20px',
-              padding: '1.2rem',
-              textAlign: 'center',
-              marginBottom: '1.25rem',
-              border: '1.5px solid #bfdbfe',
-            }}
-          >
+          <div className="simple-glass-well" style={{ marginBottom: '1.25rem' }}>
             <div style={{ fontSize: '0.88rem', color: '#64748b', fontWeight: 600 }}>
               {friendlyTodayDate}
             </div>
@@ -1268,12 +1191,12 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
           </div>
 
           {/* Prompt */}
-          <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', textAlign: 'center', marginBottom: '1rem' }}>
+          <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', textAlign: 'center', marginBottom: '1.1rem' }}>
             {language === 'ml' ? 'പണം നൽകിയോ അതോ പിന്നെ നൽകുമോ?' : language === 'ta' ? 'பணம் கொடுத்தாச்சா அல்லது அப்புறம் தரலாமா?' : 'Did you pay now or pay later?'}
           </h3>
 
           {submitError && (
-            <div style={{ background: '#fee2e2', color: '#991b1b', padding: '0.65rem 0.85rem', borderRadius: '12px', fontSize: '0.85rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <div style={{ background: '#fee2e2', color: '#991b1b', padding: '0.65rem 0.85rem', borderRadius: '14px', fontSize: '0.85rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
               <AlertCircle size={17} style={{ flexShrink: 0 }} />
               <span>{submitError}</span>
             </div>
@@ -1285,32 +1208,22 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
             <button
               type="button"
               onClick={() => handleChoosePayment('paid')}
-              style={{
-                minHeight: '110px',
-                borderRadius: '22px',
-                padding: '1rem 0.6rem',
-                border: paymentChoice === 'paid' ? '3px solid #16a34a' : '2px solid #e2e8f0',
-                background: paymentChoice === 'paid' ? '#f0fdf4' : 'white',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                boxShadow: paymentChoice === 'paid' ? '0 6px 16px rgba(22, 163, 74, 0.2)' : 'var(--shadow-sm)',
-                transition: 'all 0.15s ease',
-              }}
+              className={`simple-glass-choice-tile ${paymentChoice === 'paid' ? 'choice-paid-active' : ''}`}
             >
               <div
                 style={{
-                  width: '44px',
-                  height: '44px',
-                  borderRadius: '50%',
-                  background: paymentChoice === 'paid' ? '#16a34a' : '#f1f5f9',
+                  width: '46px',
+                  height: '46px',
+                  borderRadius: '16px',
+                  background: paymentChoice === 'paid'
+                    ? 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)'
+                    : 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)',
                   color: paymentChoice === 'paid' ? 'white' : '#64748b',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  marginBottom: '0.4rem',
+                  marginBottom: '0.45rem',
+                  boxShadow: paymentChoice === 'paid' ? '0 4px 14px rgba(22, 163, 74, 0.35)' : 'none',
                 }}
               >
                 <CheckCircle2 size={26} />
@@ -1318,7 +1231,7 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
               <div style={{ fontSize: '1.15rem', fontWeight: 900, color: paymentChoice === 'paid' ? '#166534' : '#0f172a' }}>
                 {t('paidNow')}
               </div>
-              <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600, textAlign: 'center', marginTop: '2px' }}>
+              <div style={{ fontSize: '0.74rem', color: '#64748b', fontWeight: 600, textAlign: 'center', marginTop: '2px' }}>
                 {t('paidNowDesc')}
               </div>
             </button>
@@ -1327,32 +1240,22 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
             <button
               type="button"
               onClick={() => handleChoosePayment('pending')}
-              style={{
-                minHeight: '110px',
-                borderRadius: '22px',
-                padding: '1rem 0.6rem',
-                border: paymentChoice === 'pending' ? '3px solid #d97706' : '2px solid #e2e8f0',
-                background: paymentChoice === 'pending' ? '#fffbeb' : 'white',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                boxShadow: paymentChoice === 'pending' ? '0 6px 16px rgba(217, 119, 6, 0.2)' : 'var(--shadow-sm)',
-                transition: 'all 0.15s ease',
-              }}
+              className={`simple-glass-choice-tile ${paymentChoice === 'pending' ? 'choice-pending-active' : ''}`}
             >
               <div
                 style={{
-                  width: '44px',
-                  height: '44px',
-                  borderRadius: '50%',
-                  background: paymentChoice === 'pending' ? '#d97706' : '#f1f5f9',
+                  width: '46px',
+                  height: '46px',
+                  borderRadius: '16px',
+                  background: paymentChoice === 'pending'
+                    ? 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)'
+                    : 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)',
                   color: paymentChoice === 'pending' ? 'white' : '#64748b',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  marginBottom: '0.4rem',
+                  marginBottom: '0.45rem',
+                  boxShadow: paymentChoice === 'pending' ? '0 4px 14px rgba(217, 119, 6, 0.35)' : 'none',
                 }}
               >
                 <Clock size={26} />
@@ -1360,7 +1263,7 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
               <div style={{ fontSize: '1.15rem', fontWeight: 900, color: paymentChoice === 'pending' ? '#b45309' : '#0f172a' }}>
                 {t('payLater')}
               </div>
-              <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600, textAlign: 'center', marginTop: '2px' }}>
+              <div style={{ fontSize: '0.74rem', color: '#64748b', fontWeight: 600, textAlign: 'center', marginTop: '2px' }}>
                 {t('payLaterDesc')}
               </div>
             </button>
@@ -1377,8 +1280,7 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
               width: '100%',
               fontSize: '1.25rem',
               fontWeight: 800,
-              background: '#2563eb',
-              boxShadow: '0 8px 20px rgba(37, 99, 235, 0.3)',
+              borderRadius: '20px',
             }}
           >
             {isSubmitting ? t('saving') : `${t('confirmAndSave')} (₹${calculatedRupees})`}
@@ -1390,75 +1292,61 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
           STEP 3: SAVE CONFIRMATION CELEBRATION SCREEN
           ======================================================== */}
       {step === 'success' && lastSavedEntry && (
-        <div
-          style={{
-            background: 'white',
-            borderRadius: 'var(--radius-xl, 28px)',
-            padding: '2rem 1.5rem',
-            boxShadow: 'var(--shadow-card)',
-            border: '2.5px solid #16a34a',
-            textAlign: 'center',
-            marginBottom: '1.5rem',
-          }}
-        >
+        <div className="simple-glass-step-card step-success">
           {/* Animated Success Icon */}
           <div
             style={{
-              width: '74px',
-              height: '74px',
+              width: '76px',
+              height: '76px',
               borderRadius: '50%',
-              background: '#dcfce7',
-              color: '#16a34a',
+              background: 'linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%)',
+              color: '#15803d',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               margin: '0 auto 1.25rem',
-              boxShadow: '0 8px 20px rgba(22, 163, 74, 0.25)',
+              boxShadow: '0 10px 24px rgba(22, 163, 74, 0.3)',
+              border: '2px solid rgba(255, 255, 255, 0.9)',
             }}
           >
             <CheckCircle2 size={44} />
           </div>
 
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 900, color: '#166534', marginBottom: '0.5rem' }}>
-            {t('successRecorded')}
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 900, color: lastSavedEntry.quantityMl === 0 ? '#b91c1c' : '#166534', marginBottom: '0.5rem' }}>
+            {lastSavedEntry.quantityMl === 0
+              ? (language === 'ta' ? 'இன்று பால் வாங்கவில்லை என பதிவானது' : language === 'ml' ? 'ഇന്ന് പാൽ വാങ്ങിയില്ല എന്ന് രേഖപ്പെടുത്തി' : 'No Milk Recorded for Today')
+              : t('successRecorded')}
           </h2>
 
-          <div
-            style={{
-              background: '#f0fdf4',
-              borderRadius: '18px',
-              padding: '1.1rem',
-              border: '1.5px dashed #86efac',
-              margin: '1rem 0 1.5rem',
-            }}
-          >
-            <div style={{ fontSize: '1.4rem', fontWeight: 900, color: '#0f172a' }}>
+          <div className="simple-glass-well well-success" style={{ margin: '1rem 0 1.5rem' }}>
+            <div style={{ fontSize: '1.4rem', fontWeight: 900, color: lastSavedEntry.quantityMl === 0 ? '#b91c1c' : '#0f172a' }}>
               {formatMilkQuantity(lastSavedEntry.quantityMl, language)}
             </div>
-            <div style={{ fontSize: '1.8rem', fontWeight: 900, color: '#15803d', marginTop: '0.2rem' }}>
+            <div style={{ fontSize: '1.8rem', fontWeight: 900, color: lastSavedEntry.quantityMl === 0 ? '#b91c1c' : '#15803d', marginTop: '0.2rem' }}>
               {formatPaise(lastSavedEntry.totalAmountPaise)}
             </div>
             <div
               style={{
                 marginTop: '0.5rem',
                 display: 'inline-block',
-                background: lastSavedEntry.paymentStatus === 'paid' ? '#dcfce7' : '#fef3c7',
-                color: lastSavedEntry.paymentStatus === 'paid' ? '#166534' : '#b45309',
+                background: lastSavedEntry.quantityMl === 0 ? '#fee2e2' : lastSavedEntry.paymentStatus === 'paid' ? '#dcfce7' : '#fef3c7',
+                color: lastSavedEntry.quantityMl === 0 ? '#b91c1c' : lastSavedEntry.paymentStatus === 'paid' ? '#166534' : '#b45309',
                 padding: '0.3rem 0.85rem',
                 borderRadius: '12px',
                 fontSize: '0.85rem',
                 fontWeight: 800,
+                border: lastSavedEntry.quantityMl === 0 ? '1px solid #fecaca' : lastSavedEntry.paymentStatus === 'paid' ? '1px solid #86efac' : '1px solid #fde68a',
               }}
             >
-              {lastSavedEntry.paymentStatus === 'paid' ? '✓ ' + t('paid') : '⏱ ' + t('pending')}
+              {lastSavedEntry.quantityMl === 0 ? '🚫 ' + t('noMilkBadge') : lastSavedEntry.paymentStatus === 'paid' ? '✓ ' + t('paid') : '⏱ ' + t('pending')}
             </div>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
             <button
               type="button"
-              className="btn-primary-big"
-              style={{ minHeight: '52px', fontSize: '1.1rem' }}
+              className="btn-primary-big simple-header-btn"
+              style={{ minHeight: '52px', fontSize: '1.1rem', borderRadius: '18px' }}
               onClick={() => {
                 setStep('select_quantity');
               }}
@@ -1468,8 +1356,8 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
 
             <button
               type="button"
-              className="btn-secondary"
-              style={{ minHeight: '46px', fontSize: '0.95rem' }}
+              className="btn-secondary simple-header-btn"
+              style={{ minHeight: '46px', fontSize: '0.95rem', borderRadius: '18px' }}
               onClick={() => {
                 setStep('select_quantity');
               }}
@@ -1483,39 +1371,25 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
 
       {/* RECENT ACTIVITY LIST (Only shown on home step) */}
       {step === 'select_quantity' && recentEntries.length > 0 && (
-        <div
-          style={{
-            background: 'white',
-            borderRadius: 'var(--radius-lg, 20px)',
-            padding: '1.1rem 1.25rem',
-            boxShadow: 'var(--shadow-sm)',
-            border: '1px solid var(--slate-200)',
-          }}
-        >
-          <h3 style={{ fontSize: '0.95rem', fontWeight: 800, color: '#0f172a', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+        <div className="simple-sub-card">
+          <h3 style={{ fontSize: '0.95rem', fontWeight: 800, color: '#0f172a', marginBottom: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
             <Clock size={16} color="#2563eb" />
             <span>{t('recentMilkHistory')}</span>
           </h3>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
             {recentEntries.map((entry) => {
               const isNoMilk = entry.quantityMl === 0;
               return (
                 <div
                   key={entry.id}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '0.65rem 0',
-                    borderBottom: '1px solid #f1f5f9',
-                  }}
+                  className={`simple-glass-entry ${isNoMilk ? 'entry-nomilk' : 'entry-milk'}`}
                 >
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
-                    <div style={{ fontWeight: 700, color: isNoMilk ? '#be123c' : '#0f172a', fontSize: '0.92rem', display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap' }}>
+                    <div style={{ fontWeight: 800, color: isNoMilk ? '#be123c' : '#0f172a', fontSize: '0.94rem', display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap' }}>
                       {isNoMilk && <span>🚫</span>}
                       <span>{formatMilkQuantity(entry.quantityMl, language)}</span>
-                      <span style={{ color: isNoMilk ? '#e11d48' : '#2563eb', fontWeight: 700 }}>• {formatPaise(entry.totalAmountPaise)}</span>
+                      <span style={{ color: isNoMilk ? '#e11d48' : '#2563eb', fontWeight: 800 }}>• {formatPaise(entry.totalAmountPaise)}</span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
                       <DateTimeBadge date={entry.date} createdAt={entry.createdAt} />
@@ -1529,15 +1403,17 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
 
                   <span
                     style={{
-                      fontSize: '0.75rem',
-                      fontWeight: 700,
-                      padding: '0.2rem 0.55rem',
-                      borderRadius: '8px',
-                      background: isNoMilk ? '#f1f5f9' : entry.paymentStatus === 'paid' ? '#ecfdf5' : '#fffbeb',
-                      color: isNoMilk ? '#475569' : entry.paymentStatus === 'paid' ? '#059669' : '#d97706',
+                      fontSize: '0.76rem',
+                      fontWeight: 800,
+                      padding: '0.25rem 0.65rem',
+                      borderRadius: '10px',
+                      background: isNoMilk ? 'rgba(254, 226, 226, 0.85)' : entry.paymentStatus === 'paid' ? '#dcfce7' : '#fef3c7',
+                      color: isNoMilk ? '#b91c1c' : entry.paymentStatus === 'paid' ? '#166534' : '#b45309',
+                      border: isNoMilk ? '1px solid #fca5a5' : entry.paymentStatus === 'paid' ? '1px solid #86efac' : '1px solid #fde68a',
+                      boxShadow: '0 2px 6px rgba(0,0,0,0.03)',
                     }}
                   >
-                    {isNoMilk ? t('noMilkBadge') : entry.paymentStatus === 'paid' ? t('paid') : t('pending')}
+                    {isNoMilk ? t('noMilkBadge') : entry.paymentStatus === 'paid' ? '✓ ' + t('paid') : '⏱ ' + t('pending')}
                   </span>
                 </div>
               );

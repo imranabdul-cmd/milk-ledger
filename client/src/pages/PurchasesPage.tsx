@@ -14,7 +14,7 @@ import { useToast } from '../context/ToastContext';
 export const PurchasesPage: React.FC = () => {
   const { t, language } = useLanguage();
   const { user } = useAuth();
-  const { toast } = useToast();
+  const { toast, confirm } = useToast();
   const isAdmin = user?.role === 'admin' || user?.role === 'owner';
 
   const currentMonthStr = new Date().toISOString().substring(0, 7);
@@ -60,7 +60,14 @@ export const PurchasesPage: React.FC = () => {
       return;
     }
 
-    if (!window.confirm(t('deleteConfirm'))) return;
+    const ok = await confirm({
+      title: t('deleteConfirmTitle'),
+      message: t('deleteConfirm'),
+      confirmText: t('deleteAction'),
+      cancelText: t('cancel'),
+      type: 'danger',
+    });
+    if (!ok) return;
 
     try {
       await apiRequest(`/api/milk/entries/${id}`, { method: 'DELETE' });

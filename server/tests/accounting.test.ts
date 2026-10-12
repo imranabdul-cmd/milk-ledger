@@ -448,5 +448,47 @@ describe('Family Milk Account - Core Accounting & Integration Suite', () => {
       expect(octSummaryAfter.previousMonthSettlement?.settlementPaymentMethod).toBe('upi');
       expect(octSummaryAfter.previousMonthSettlement?.settlementPaymentId).toBe(settlementPayment.id);
     });
+
+    it('allows recording 0 ml (No Milk Taken) entries without violating constraints or skewing metrics', async () => {
+      // Set rate to ₹50/L
+      await pool.query(
+        `INSERT INTO milk_rate_history (family_id, rate_paise_per_litre, effective_from, created_by)
+         VALUES ($1, 5000, '2026-10-01', $2)`,
+        [familyId, adminId]
+      );
+
+      // Record a normal purchase on Oct 2 (1 L = ₹50)
+      await createMilkEntry({
+        familyId,
+        memberId: adminId,
+        date: '2026-10-02',
+        quantityMl: 1000,
+        paymentChoice: 'pending'
+      });
+
+      // Record No Milk Taken on Oct 3 (0 L = ₹0)
+      const noMilkEntry = await createMilkEntry({
+        familyId,
+        memberId: adminId,
+        date: '2026-10-03',
+        quantityMl: 0,
+        paymentChoice: 'paid',
+        notes: 'No Milk Taken (0 L)'
+      });
+
+      expect(noMilkEntry).toBeDefined();
+      expect(noMilkEntry.quantityMl).toBe(0);
+      expect(noMilkEntry.totalAmountPaise).toBe(0);
+      expect(noMilkEntry.paymentStatus).toBe('paid');
+
+      // Check summary metrics
+      const summary = await getDashboardSummary(familyId, '2026-10');
+      // Only 1 purchase day (Oct 2), distinctDays ignores quantity_ml = 0
+      expect(summary.purchaseDays).toBe(1);
+      expect(summary.totalLitres).toBe(1.0);
+      expect(summary.totalMilkChargesPaise).toBe(5000);
+      expect(summary.closingBalancePaise).toBe(5000);
+    });
   });
 });
+

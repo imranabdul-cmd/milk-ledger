@@ -14,7 +14,7 @@ import { useToast } from '../context/ToastContext';
 export const MonthlySettlementPage: React.FC = () => {
   const { t, language } = useLanguage();
   const { user } = useAuth();
-  const { toast } = useToast();
+  const { toast, confirm } = useToast();
 
   const currentMonthStr = new Date().toISOString().substring(0, 7);
   const [selectedMonth, setSelectedMonth] = useState<string>(currentMonthStr);
@@ -50,7 +50,14 @@ export const MonthlySettlementPage: React.FC = () => {
   useAutoSync(fetchSettlementData, { intervalMs: 10000, immediate: false });
 
   const handleCloseMonth = async () => {
-    if (!window.confirm(t('closeMonthConfirm'))) return;
+    const ok = await confirm({
+      title: t('closeMonthConfirmTitle'),
+      message: t('closeMonthConfirm'),
+      confirmText: t('confirmAndSave'),
+      cancelText: t('cancel'),
+      type: 'warning',
+    });
+    if (!ok) return;
 
     setIsClosing(true);
     try {

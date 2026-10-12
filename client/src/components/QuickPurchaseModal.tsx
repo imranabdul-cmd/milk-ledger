@@ -23,7 +23,7 @@ export const QuickPurchaseModal: React.FC<QuickPurchaseModalProps> = ({
   initialQuantityMl = 500,
 }) => {
   const { t, language } = useLanguage();
-  const { toast } = useToast();
+  const { toast, confirm } = useToast();
 
   // Today in Asia/Kolkata
   const todayStr = getKolkataTodayDateString();
@@ -31,7 +31,7 @@ export const QuickPurchaseModal: React.FC<QuickPurchaseModalProps> = ({
   const [date, setDate] = useState<string>(todayStr);
   const [quantityMl, setQuantityMl] = useState<number>(initialQuantityMl);
   const [customMlInput, setCustomMlInput] = useState<string>('');
-  const [isCustomMode, setIsCustomMode] = useState<boolean>(initialQuantityMl !== 500 && initialQuantityMl !== 1000);
+  const [isCustomMode, setIsCustomMode] = useState<boolean>(initialQuantityMl !== 500 && initialQuantityMl !== 1000 && initialQuantityMl !== 0);
   const [paymentChoice, setPaymentChoice] = useState<'paid' | 'pending'>('pending');
   const [notes, setNotes] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -44,6 +44,59 @@ export const QuickPurchaseModal: React.FC<QuickPurchaseModalProps> = ({
   const handleSelectPreset = (ml: number) => {
     setIsCustomMode(false);
     setQuantityMl(ml);
+  };
+
+  const handleSelectNoMilk = async () => {
+    const ok = await confirm({
+      title: language === 'ta' ? 'பால் வாங்கவில்லையா?' : language === 'ml' ? 'പാൽ വാങ്ങിയില്ലേ?' : 'No Milk Taken?',
+      message: language === 'ta'
+        ? `தேதி ${date}-ல் பால் வாங்கவில்லை (0 L) என்பதை உறுதிப்படுத்துகிறீர்களா?`
+        : language === 'ml'
+        ? `${date} തീയതിയിൽ പാൽ വാങ്ങിയില്ല (0 L) എന്ന് ഉറപ്പാണോ?`
+        : `Are you sure you didn't buy milk on ${date} (0 L)?`,
+      confirmText: language === 'ta' ? 'ஆம், வாங்கவில்லை' : language === 'ml' ? 'അതെ, வாങ്ങിയില്ല' : 'Yes, Confirm',
+      cancelText: t('cancel'),
+      type: 'milk',
+    });
+    if (!ok) return;
+
+    setIsSubmitting(true);
+    const idempotencyKey = `entry-nomilk-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+    const defaultNotes = language === 'ta'
+      ? 'பால் வாங்கவில்லை (No Milk)'
+      : language === 'ml'
+      ? 'പാൽ வாങ്ങിയില്ല (No Milk)'
+      : 'No Milk Delivered';
+
+    try {
+      await apiRequest('/api/milk/entries', {
+        method: 'POST',
+        body: JSON.stringify({
+          date,
+          quantityMl: 0,
+          paymentChoice: 'paid',
+          notes: notes.trim() || defaultNotes,
+          idempotencyKey,
+        }),
+      });
+
+      toast.milk(
+        language === 'ta'
+          ? `${date}-ல் பால் வாங்கவில்லை (0 L) என பதிவானது`
+          : language === 'ml'
+          ? `${date}-ൽ പാൽ വാങ്ങിയില്ല (0 L) എന്ന് രേഖപ്പെടുത്തി`
+          : `Recorded No Milk (0 L) on ${date}`
+      );
+
+      onSuccess();
+      notifyDataChanged();
+      onClose();
+    } catch (err: any) {
+      setError(err.message || t('errorSaving'));
+      toast.error(err.message || t('errorSaving'));
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleCustomMlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -163,7 +216,7 @@ export const QuickPurchaseModal: React.FC<QuickPurchaseModalProps> = ({
                 type="button"
                 className={`quick-tap-btn ${quantityMl === 0 && !isCustomMode ? 'selected-paid' : ''}`}
                 style={{ borderColor: quantityMl === 0 && !isCustomMode ? '#ef4444' : undefined, background: quantityMl === 0 && !isCustomMode ? '#fef2f2' : undefined }}
-                onClick={() => handleSelectPreset(0)}
+                onClick={handleSelectNoMilk}
               >
                 <span className="quick-qty-val" style={{ color: '#dc2626' }}>🚫 0 L</span>
                 <span className="quick-qty-sub" style={{ color: '#b91c1c' }}>{t('noMilkBadge')}</span>

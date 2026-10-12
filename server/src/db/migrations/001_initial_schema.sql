@@ -52,7 +52,7 @@ CREATE TABLE IF NOT EXISTS milk_entries (
   family_id UUID NOT NULL REFERENCES families(id) ON DELETE CASCADE,
   member_id UUID REFERENCES family_members(id) ON DELETE SET NULL,
   date DATE NOT NULL,
-  quantity_ml INTEGER NOT NULL CHECK (quantity_ml > 0),
+  quantity_ml INTEGER NOT NULL CHECK (quantity_ml >= 0),
   rate_paise_per_litre INTEGER NOT NULL CHECK (rate_paise_per_litre > 0),
   total_amount_paise INTEGER NOT NULL CHECK (total_amount_paise >= 0),
   payment_status VARCHAR(20) NOT NULL DEFAULT 'pending' CHECK (payment_status IN ('paid', 'pending', 'partially_paid')),

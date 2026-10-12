@@ -1,6 +1,6 @@
-import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
+import React, { createContext, useContext, useState, useCallback, useMemo, useEffect } from 'react';
 import { useLanguage } from './LanguageContext';
-import { Droplets, CheckCircle2, AlertCircle, Info, X, Sparkles } from 'lucide-react';
+import { Droplets, CheckCircle2, AlertCircle, Info, X, Sparkles, LogOut, Trash2, AlertTriangle, HelpCircle } from 'lucide-react';
 
 export type ToastType = 'milk' | 'success' | 'error' | 'info' | 'warning';
 
@@ -16,6 +16,19 @@ export interface ToastItem extends ToastOptions {
   createdAt: number;
 }
 
+export interface ConfirmOptions {
+  title?: string;
+  message: string;
+  confirmText?: string;
+  cancelText?: string;
+  type?: 'milk' | 'danger' | 'warning' | 'info' | 'logout';
+}
+
+interface ConfirmState extends ConfirmOptions {
+  isOpen: boolean;
+  resolve: (value: boolean) => void;
+}
+
 interface ToastContextType {
   toast: {
     show: (opts: ToastOptions) => void;
@@ -25,6 +38,7 @@ interface ToastContextType {
     info: (message: string, title?: string) => void;
     warning: (message: string, title?: string) => void;
   };
+  confirm: (opts: ConfirmOptions) => Promise<boolean>;
   dismiss: (id: string) => void;
 }
 
@@ -32,6 +46,7 @@ const ToastContext = createContext<ToastContextType | undefined>(undefined);
 
 export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
+  const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
   const { language } = useLanguage();
 
   const dismiss = useCallback((id: string) => {
@@ -65,6 +80,48 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     },
     [dismiss]
   );
+
+  const confirm = useCallback((opts: ConfirmOptions): Promise<boolean> => {
+    return new Promise<boolean>((resolve) => {
+      setConfirmState({
+        ...opts,
+        isOpen: true,
+        resolve,
+      });
+    });
+  }, []);
+
+  const handleConfirmCancel = useCallback(() => {
+    if (confirmState?.resolve) {
+      confirmState.resolve(false);
+    }
+    setConfirmState(null);
+  }, [confirmState]);
+
+  const handleConfirmAccept = useCallback(() => {
+    if (confirmState?.resolve) {
+      confirmState.resolve(true);
+    }
+    setConfirmState(null);
+  }, [confirmState]);
+
+  // Keyboard accessibility: Escape to cancel, Enter to confirm
+  useEffect(() => {
+    if (!confirmState?.isOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        handleConfirmCancel();
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        handleConfirmAccept();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [confirmState, handleConfirmCancel, handleConfirmAccept]);
 
   const toastMethods = useMemo(
     () => ({
@@ -104,7 +161,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   );
 
   return (
-    <ToastContext.Provider value={{ toast: toastMethods, dismiss }}>
+    <ToastContext.Provider value={{ toast: toastMethods, confirm, dismiss }}>
       {children}
 
       {/* Floating Milky Glassmorphic Toaster Container */}
@@ -155,6 +212,64 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           </div>
         ))}
       </div>
+
+      {/* Pure Milk Glassmorphic Confirmation Modal / Dialog */}
+      {confirmState?.isOpen && (
+        <div
+          className="milk-confirm-overlay"
+          onClick={handleConfirmCancel}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="milk-confirm-title"
+          aria-describedby="milk-confirm-desc"
+        >
+          <div
+            className={`milk-confirm-card confirm-type-${confirmState.type || 'warning'}`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Ambient Milky Frosted Light Reflection */}
+            <div className="milk-toast-ambient" />
+
+            {/* Glowing Claymorphic Icon Badge */}
+            <div className={`milk-confirm-icon-wrapper icon-type-${confirmState.type || 'warning'}`}>
+              {confirmState.type === 'logout' && <LogOut size={26} />}
+              {confirmState.type === 'danger' && <Trash2 size={26} />}
+              {confirmState.type === 'warning' && <AlertTriangle size={26} />}
+              {confirmState.type === 'milk' && <Droplets size={26} />}
+              {(!confirmState.type || confirmState.type === 'info') && <HelpCircle size={26} />}
+            </div>
+
+            {/* Title & Message */}
+            <div className="milk-confirm-body">
+              <h3 id="milk-confirm-title" className="milk-confirm-title">
+                {confirmState.title || (language === 'ta' ? 'உறுதிப்படுத்தவும்' : language === 'ml' ? 'സ്ഥിരീകരിക്കുക' : 'Please Confirm')}
+              </h3>
+              <p id="milk-confirm-desc" className="milk-confirm-message">
+                {confirmState.message}
+              </p>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="milk-confirm-actions">
+              <button
+                type="button"
+                className="milk-confirm-btn btn-cancel"
+                onClick={handleConfirmCancel}
+              >
+                {confirmState.cancelText || (language === 'ta' ? 'ரத்து செய்' : language === 'ml' ? 'റദ്ദാക്കുക' : 'Cancel')}
+              </button>
+              <button
+                type="button"
+                className={`milk-confirm-btn btn-confirm btn-${confirmState.type || 'warning'}`}
+                onClick={handleConfirmAccept}
+                autoFocus
+              >
+                {confirmState.confirmText || (language === 'ta' ? 'சரி' : language === 'ml' ? 'ശരി' : 'Confirm')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </ToastContext.Provider>
   );
 };
@@ -165,4 +280,9 @@ export function useToast(): ToastContextType {
     throw new Error('useToast must be used within a ToastProvider');
   }
   return ctx;
+}
+
+export function useConfirm() {
+  const { confirm } = useToast();
+  return { confirm };
 }

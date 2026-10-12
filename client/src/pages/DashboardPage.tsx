@@ -43,7 +43,7 @@ interface DashboardPageProps {
 export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToTab }) => {
   const { t, language } = useLanguage();
   const { user } = useAuth();
-  const { toast } = useToast();
+  const { toast, confirm } = useToast();
   const isAdmin = user?.role === 'admin' || user?.role === 'owner';
 
   // Current Kolkata date and month
@@ -130,6 +130,53 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToTab })
     setIsPurchaseModalOpen(true);
   };
 
+  const handleRecordNoMilkToday = async () => {
+    const ok = await confirm({
+      title: language === 'ta' ? 'இன்று பால் வாங்கவில்லையா?' : language === 'ml' ? 'ഇന്ന് പാൽ വാങ്ങിയില്ലേ?' : 'No Milk Taken Today?',
+      message: language === 'ta'
+        ? `இன்று (${todayDateStr}) பால் வாங்கவில்லை (0 L) என்பதை உறுதிப்படுத்துகிறீர்களா?`
+        : language === 'ml'
+        ? `ഇന്ന് (${todayDateStr}) പാൽ വാങ്ങിയില്ല (0 L) എന്ന് ഉറപ്പാണോ?`
+        : `Are you sure you didn't buy milk today (${todayDateStr})?`,
+      confirmText: language === 'ta' ? 'ஆம், வாங்கவில்லை' : language === 'ml' ? 'അതെ, വാങ്ങിയില്ല' : 'Yes, Confirm',
+      cancelText: t('cancel'),
+      type: 'milk',
+    });
+    if (!ok) return;
+
+    try {
+      const idempotencyKey = `entry-nomilk-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+      const defaultNotes = language === 'ta'
+        ? 'பால் வாங்கவில்லை (No Milk)'
+        : language === 'ml'
+        ? 'പാൽ വാങ്ങിയില്ല (No Milk)'
+        : 'No Milk Delivered';
+
+      await apiRequest('/api/milk/entries', {
+        method: 'POST',
+        body: JSON.stringify({
+          date: todayDateStr,
+          quantityMl: 0,
+          paymentChoice: 'paid',
+          notes: defaultNotes,
+          idempotencyKey,
+        }),
+      });
+
+      toast.milk(
+        language === 'ta'
+          ? 'இன்று பால் வாங்கவில்லை (0 L) என பதிவானது'
+          : language === 'ml'
+          ? 'ഇന്ന് പാൽ വാങ്ങിയില്ല (0 L) എന്ന് രേഖപ്പെടുത്തി'
+          : 'Recorded No Milk (0 L) for today'
+      );
+      fetchSummary(true);
+      notifyDataChanged();
+    } catch (err: any) {
+      toast.error(err.message || t('errorSaving'));
+    }
+  };
+
   const handleDeleteActivity = async (act: any) => {
     if (!isAdmin) {
       toast.warning(
@@ -142,7 +189,14 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToTab })
       ? (language === 'ta' ? `இந்த பால் பதிவை நீக்க விரும்புகிறீர்களா? (${act.title || formatMilkQuantity(act.quantityMl ?? 500, language)})` : language === 'ml' ? `ഈ രേഖ ഒഴിവാക്കണോ?` : `Delete this milk entry?`)
       : (language === 'ta' ? `இந்த பணப் பதிவை நீக்க விரும்புகிறீர்களா? (${formatPaise(act.amountPaise)})` : language === 'ml' ? `ഈ രേഖ ഒഴിവാക്കണോ?` : `Delete this payment?`);
 
-    if (!window.confirm(confirmMsg)) return;
+    const ok = await confirm({
+      title: t('deleteConfirmTitle'),
+      message: confirmMsg,
+      confirmText: t('deleteAction'),
+      cancelText: t('cancel'),
+      type: 'danger',
+    });
+    if (!ok) return;
 
     try {
       const url = act.type === 'purchase' ? `/api/milk/entries/${act.id}` : `/api/payments/${act.id}`;
@@ -569,7 +623,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToTab })
               <button
                 type="button"
                 className="quick-qty-card no-milk-qty-card"
-                onClick={() => handleOpenQuickAdd(0)}
+                onClick={handleRecordNoMilkToday}
               >
                 <span className="qty-heading" style={{ color: '#dc2626' }}>
                   🚫 0 L

@@ -14,6 +14,7 @@ import {
   Check,
   ChevronDown
 } from 'lucide-react';
+import { useToast } from '../context/ToastContext';
 import { MobileDrawer } from './MobileDrawer';
 
 interface HeaderProps {
@@ -95,6 +96,7 @@ export const AnimatedMilkGlass: React.FC<{ size?: number }> = ({ size = 30 }) =>
 export const Header: React.FC<HeaderProps> = ({ currentTab, onTabChange, onSwitchToSimple }) => {
   const { language, setLanguage, t } = useLanguage();
   const { user, logout, updateUserLanguage } = useAuth();
+  const { toast, confirm } = useToast();
   const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
   const [isLangDropdownOpen, setIsLangDropdownOpen] = useState<boolean>(false);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -112,9 +114,17 @@ export const Header: React.FC<HeaderProps> = ({ currentTab, onTabChange, onSwitc
     return () => window.removeEventListener('click', handleOutsideClick);
   }, []);
 
-  const handleLogout = () => {
-    if (window.confirm(t('logoutConfirm'))) {
+  const handleLogout = async () => {
+    const ok = await confirm({
+      title: t('logoutConfirmTitle'),
+      message: t('logoutConfirm'),
+      confirmText: t('logoutAction') || t('logout'),
+      cancelText: t('cancel'),
+      type: 'logout',
+    });
+    if (ok) {
       logout();
+      toast.info(t('loggedOut'));
     }
   };
 
@@ -128,24 +138,83 @@ export const Header: React.FC<HeaderProps> = ({ currentTab, onTabChange, onSwitc
 
   const userInitial = user?.name ? user.name.charAt(0).toUpperCase() : 'A';
 
+  const renderLangDropdown = () => (
+    <div className="header-lang-wrapper" onClick={(e) => e.stopPropagation()}>
+      <button
+        type="button"
+        className="lang-btn"
+        onClick={() => setIsLangDropdownOpen(!isLangDropdownOpen)}
+        title={t('language')}
+      >
+        <Globe size={15} color="#60a5fa" />
+        <span>{language === 'ml' ? 'മലയാളം' : language === 'ta' ? 'தமிழ்' : 'English'}</span>
+        <ChevronDown size={13} style={{ opacity: 0.8 }} />
+      </button>
+
+      {isLangDropdownOpen && (
+        <div className="header-lang-dropdown">
+          <button
+            type="button"
+            className={`header-lang-item ${language === 'en' ? 'active' : ''}`}
+            onClick={() => {
+              setLanguage('en');
+              updateUserLanguage('en');
+              setIsLangDropdownOpen(false);
+              toast.milk('Language changed to English');
+            }}
+          >
+            <span className="lang-item-name">English</span>
+            {language === 'en' && <Check size={14} color="#2563eb" />}
+          </button>
+          <button
+            type="button"
+            className={`header-lang-item ${language === 'ta' ? 'active' : ''}`}
+            onClick={() => {
+              setLanguage('ta');
+              updateUserLanguage('ta');
+              setIsLangDropdownOpen(false);
+              toast.milk('மொழி தமிழாக மாற்றப்பட்டது');
+            }}
+          >
+            <span className="lang-item-name">தமிழ் (Tamil)</span>
+            {language === 'ta' && <Check size={14} color="#2563eb" />}
+          </button>
+          <button
+            type="button"
+            className={`header-lang-item ${language === 'ml' ? 'active' : ''}`}
+            onClick={() => {
+              setLanguage('ml');
+              updateUserLanguage('ml');
+              setIsLangDropdownOpen(false);
+              toast.milk('ഭാഷ മലയാളം ആയി മാറ്റി');
+            }}
+          >
+            <span className="lang-item-name">മലയാളം (Malayalam)</span>
+            {language === 'ml' && <Check size={14} color="#2563eb" />}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <header className="app-header">
-      {/* 4K Crystal-Clear Header Video Background */}
-      <video
-        ref={videoRef}
-        className="header-bg-video"
-        autoPlay
-        loop
-        muted
-        playsInline
-        preload="auto"
-        aria-hidden="true"
-      >
-        <source src="/videos/Header_video.mp4" type="video/mp4" />
-      </video>
-
-      {/* Crystal-Clear Ambient Gradient Overlay */}
-      <div className="header-video-overlay" />
+      {/* 4K Crystal-Clear Header Video Background Wrapper (isolated overflow:hidden so header has overflow:visible) */}
+      <div className="header-video-wrapper">
+        <video
+          ref={videoRef}
+          className="header-bg-video"
+          autoPlay
+          loop
+          muted
+          playsInline
+          preload="auto"
+          aria-hidden="true"
+        >
+          <source src="/videos/Header_video.mp4" type="video/mp4" />
+        </video>
+        <div className="header-video-overlay" />
+      </div>
 
       {/* Full-Width Responsive Header Content */}
       <div className="header-container">
@@ -202,59 +271,7 @@ export const Header: React.FC<HeaderProps> = ({ currentTab, onTabChange, onSwitc
           )}
 
           {/* Language Selector Dropdown */}
-          <div className="header-lang-wrapper" onClick={(e) => e.stopPropagation()}>
-            <button
-              type="button"
-              className="lang-btn"
-              onClick={() => setIsLangDropdownOpen(!isLangDropdownOpen)}
-              title={t('language')}
-            >
-              <Globe size={15} color="#60a5fa" />
-              <span>{language === 'ml' ? 'മലയാളം' : language === 'ta' ? 'தமிழ்' : 'English'}</span>
-              <ChevronDown size={13} style={{ opacity: 0.8 }} />
-            </button>
-
-            {isLangDropdownOpen && (
-              <div className="header-lang-dropdown">
-                <button
-                  type="button"
-                  className={`header-lang-item ${language === 'en' ? 'active' : ''}`}
-                  onClick={() => {
-                    setLanguage('en');
-                    updateUserLanguage('en');
-                    setIsLangDropdownOpen(false);
-                  }}
-                >
-                  <span className="lang-item-name">English</span>
-                  {language === 'en' && <Check size={14} color="#2563eb" />}
-                </button>
-                <button
-                  type="button"
-                  className={`header-lang-item ${language === 'ta' ? 'active' : ''}`}
-                  onClick={() => {
-                    setLanguage('ta');
-                    updateUserLanguage('ta');
-                    setIsLangDropdownOpen(false);
-                  }}
-                >
-                  <span className="lang-item-name">தமிழ் (Tamil)</span>
-                  {language === 'ta' && <Check size={14} color="#2563eb" />}
-                </button>
-                <button
-                  type="button"
-                  className={`header-lang-item ${language === 'ml' ? 'active' : ''}`}
-                  onClick={() => {
-                    setLanguage('ml');
-                    updateUserLanguage('ml');
-                    setIsLangDropdownOpen(false);
-                  }}
-                >
-                  <span className="lang-item-name">മലയാളം (Malayalam)</span>
-                  {language === 'ml' && <Check size={14} color="#2563eb" />}
-                </button>
-              </div>
-            )}
-          </div>
+          {renderLangDropdown()}
 
           {/* User Profile Badge matching reference image */}
           <div className="header-user-profile-badge" title={user?.name || 'Family Admin'}>
@@ -276,8 +293,10 @@ export const Header: React.FC<HeaderProps> = ({ currentTab, onTabChange, onSwitc
           </button>
         </div>
 
-        {/* Mobile Header Right: Sleek Avatar & Menu Trigger */}
+        {/* Mobile Header Right: Language Selector & Sleek Menu Trigger */}
         <div className="mobile-header-actions">
+          {renderLangDropdown()}
+
           <button
             className="mobile-menu-trigger-btn"
             onClick={() => setIsDrawerOpen(true)}

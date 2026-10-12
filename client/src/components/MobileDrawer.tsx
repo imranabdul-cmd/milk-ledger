@@ -1,6 +1,7 @@
 import React from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 import {
   X,
   LayoutDashboard,
@@ -33,18 +34,34 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
 }) => {
   const { language, setLanguage, t } = useLanguage();
   const { user, logout, updateUserLanguage } = useAuth();
+  const { toast, confirm } = useToast();
 
   if (!isOpen) return null;
 
   const handleSelectLanguage = (lang: 'en' | 'ta' | 'ml') => {
     setLanguage(lang);
     updateUserLanguage(lang);
+    if (lang === 'ml') {
+      toast.milk('ഭാഷ മലയാളം ആയി മാറ്റി');
+    } else if (lang === 'ta') {
+      toast.milk('மொழி தமிழாக மாற்றப்பட்டது');
+    } else {
+      toast.milk('Language changed to English');
+    }
   };
 
-  const handleLogout = () => {
-    if (window.confirm(t('logoutConfirm'))) {
+  const handleLogout = async () => {
+    const ok = await confirm({
+      title: t('logoutConfirmTitle'),
+      message: t('logoutConfirm'),
+      confirmText: t('logoutAction') || t('logout'),
+      cancelText: t('cancel'),
+      type: 'logout',
+    });
+    if (ok) {
       onClose();
       logout();
+      toast.info(t('loggedOut'));
     }
   };
 
