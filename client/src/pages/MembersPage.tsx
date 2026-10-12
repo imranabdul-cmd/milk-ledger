@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import { apiRequest } from '../api/client';
@@ -19,6 +19,8 @@ import {
   AlertCircle,
   X
 } from 'lucide-react';
+import { DateTimeBadge } from '../components/DateTimeBadge';
+import { useAutoSync, notifyDataChanged } from '../hooks/useAutoSync';
 
 export const MembersPage: React.FC = () => {
   const { t, language } = useLanguage();
@@ -76,9 +78,13 @@ export const MembersPage: React.FC = () => {
     }
   }, []);
 
+  // Fetch immediately on mount
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  // Silent background sync
+  useAutoSync(fetchData, { intervalMs: 15000, immediate: false });
 
   // Handle Add Member
   const handleAddMember = async (e: React.FormEvent) => {
@@ -265,6 +271,7 @@ export const MembersPage: React.FC = () => {
       alert(language === 'ml' ? 'പുതിയ നിരക്ക് സേവ് ചെയ്തു!' : language === 'ta' ? 'புதிய விலை சேமிக்கப்பட்டது!' : 'New rate added successfully!');
       setIsAddingRate(false);
       fetchData();
+      notifyDataChanged();
     } catch (err: any) {
       alert(err.message || 'Failed to add rate');
     }
@@ -744,12 +751,17 @@ export const MembersPage: React.FC = () => {
         <div>
           {rates.map((r) => (
             <div key={r.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem 0', borderBottom: '1px solid #f1f5f9' }}>
-              <div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
                 <div style={{ fontWeight: 700, color: '#0f172a' }}>
                   {formatPaise(r.ratePaisePerLitre)} / L
                 </div>
-                <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                  Effective: {r.effectiveFrom} {r.createdByName ? `• Added by ${r.createdByName}` : ''}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+                  <DateTimeBadge date={r.effectiveFrom} createdAt={r.createdAt} />
+                  {r.createdByName && (
+                    <span className="activity-user-pill">
+                      👤 {r.createdByName}
+                    </span>
+                  )}
                 </div>
               </div>
               <span style={{ fontSize: '0.75rem', background: '#ecfdf5', color: '#059669', padding: '0.2rem 0.5rem', borderRadius: '4px', fontWeight: 700 }}>

@@ -1,14 +1,19 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useLanguage } from '../context/LanguageContext';
+import { useAuth } from '../context/AuthContext';
 import { apiRequest } from '../api/client';
 import { MilkEntry, formatPaise, formatMilkQuantity } from '@family-milk/shared';
 import { QuickPurchaseModal } from '../components/QuickPurchaseModal';
 import { CorrectionModal } from '../components/CorrectionModal';
 import { ExportBillModal } from '../components/ExportBillModal';
+import { DateTimeBadge } from '../components/DateTimeBadge';
 import { Droplets, Plus, Filter, Edit3, Trash2, Clock, CheckCircle, FileSpreadsheet } from 'lucide-react';
+import { useAutoSync, notifyDataChanged } from '../hooks/useAutoSync';
 
 export const PurchasesPage: React.FC = () => {
   const { t, language } = useLanguage();
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin' || user?.role === 'owner';
 
   const currentMonthStr = new Date().toISOString().substring(0, 7);
   const [selectedMonth, setSelectedMonth] = useState<string>(currentMonthStr);
@@ -21,8 +26,8 @@ export const PurchasesPage: React.FC = () => {
   const [editingEntry, setEditingEntry] = useState<MilkEntry | null>(null);
   const [isExportModalOpen, setIsExportModalOpen] = useState<boolean>(false);
 
-  const fetchEntries = useCallback(async () => {
-    setIsLoading(true);
+  const fetchEntries = useCallback(async (silent = false) => {
+    if (!silent) setIsLoading(true);
     try {
       let url = `/api/milk/entries?month=${selectedMonth}`;
       if (statusFilter !== 'all') {
@@ -37,16 +42,26 @@ export const PurchasesPage: React.FC = () => {
     }
   }, [selectedMonth, statusFilter]);
 
+  // Fetch immediately on mount & whenever filters change
   useEffect(() => {
     fetchEntries();
   }, [fetchEntries]);
 
+  // Silent background sync
+  useAutoSync(fetchEntries, { intervalMs: 8000, immediate: false });
+
   const handleDelete = async (id: string) => {
+    if (!isAdmin) {
+      alert(language === 'ta' ? 'அட்மின்களுக்கு மட்டுமே இந்த அனுமதியுள்ளது' : language === 'ml' ? 'അഡ്മിന് മാത്രമേ അനുവാദമുള്ളൂ' : 'Admin privilege required to delete records');
+      return;
+    }
+
     if (!window.confirm(t('deleteConfirm'))) return;
 
     try {
       await apiRequest(`/api/milk/entries/${id}`, { method: 'DELETE' });
-      fetchEntries();
+      fetchEntries(true);
+      notifyDataChanged();
     } catch (err: any) {
       alert(err.message || 'Failed to delete');
     }
@@ -144,12 +159,21 @@ export const PurchasesPage: React.FC = () => {
                     )}
                   </div>
                   <div className="activity-meta">
-                    📅 {entry.date} • @ {formatPaise(entry.ratePaisePerLitre)}/L
+                    <DateTimeBadge date={entry.date} createdAt={entry.createdAt} />
+                    <span className="datetime-pill-date" style={{ background: '#f8fafc', color: '#475569' }}>
+                      @ {formatPaise(entry.ratePaisePerLitre)}/L
+                    </span>
+                    {entry.createdByName && (
+                      <span className="activity-user-pill">
+                        👤 {entry.createdByName}
+                      </span>
+                    )}
                   </div>
-                  <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '0.2rem' }}>
-                    {entry.createdByName ? `${t('purchasedBy')} ${entry.createdByName}` : ''}
-                    {entry.notes ? ` • "${entry.notes}"` : ''}
-                  </div>
+                  {entry.notes && (
+                    <div style={{ fontSize: '0.76rem', color: '#64748b', marginTop: '0.25rem', fontStyle: 'italic' }}>
+                      "{entry.notes}"
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -176,20 +200,24 @@ export const PurchasesPage: React.FC = () => {
                 <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'flex-end', marginTop: '0.5rem' }}>
                   <button
                     className="btn-secondary"
-                    style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}
+                    style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', gap: '0.25rem' }}
                     onClick={() => setEditingEntry(entry)}
                     title={t('editCorrection')}
                   >
                     <Edit3 size={13} />
+                    <span style={{ fontSize: '0.75rem' }}>{language === 'ta' ? 'திருத்து' : language === 'ml' ? 'തിരുത്തുക' : 'Edit'}</span>
                   </button>
-                  <button
-                    className="btn-secondary"
-                    style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', color: '#dc2626' }}
-                    onClick={() => handleDelete(entry.id)}
-                    title="Delete"
-                  >
-                    <Trash2 size={13} />
-                  </button>
+                  {isAdmin && (
+                    <button
+                      className="btn-secondary"
+                      style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', color: '#dc2626', borderColor: '#fecaca', gap: '0.25rem' }}
+                      onClick={() => handleDelete(entry.id)}
+                      title="Delete Record"
+                    >
+                      <Trash2 size={13} />
+                      <span style={{ fontSize: '0.75rem' }}>{language === 'ta' ? 'நீக்கு' : language === 'ml' ? 'ഒഴിവാക്കുക' : 'Delete'}</span>
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -201,7 +229,10 @@ export const PurchasesPage: React.FC = () => {
       <QuickPurchaseModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
-        onSuccess={fetchEntries}
+        onSuccess={() => {
+          fetchEntries(true);
+          notifyDataChanged();
+        }}
         currentRatePaise={5600}
       />
 
@@ -209,7 +240,10 @@ export const PurchasesPage: React.FC = () => {
       <CorrectionModal
         isOpen={Boolean(editingEntry)}
         onClose={() => setEditingEntry(null)}
-        onSuccess={fetchEntries}
+        onSuccess={() => {
+          fetchEntries(true);
+          notifyDataChanged();
+        }}
         entry={editingEntry}
       />
 

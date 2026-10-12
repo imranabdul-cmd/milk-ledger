@@ -3,6 +3,8 @@ import { useLanguage } from '../context/LanguageContext';
 import { apiRequest } from '../api/client';
 import { PaymentMethod, rupeesToPaise } from '@family-milk/shared';
 import { X, CreditCard, AlertCircle } from 'lucide-react';
+import { getKolkataTodayDateString } from '../utils/dateFormatter';
+import { notifyDataChanged } from '../hooks/useAutoSync';
 
 interface PaymentModalProps {
   isOpen: boolean;
@@ -19,7 +21,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 }) => {
   const { t } = useLanguage();
 
-  const todayStr = new Date().toISOString().substring(0, 10);
+  const todayStr = getKolkataTodayDateString();
   const [date, setDate] = useState<string>(todayStr);
   const [amountRupees, setAmountRupees] = useState<string>(
     defaultAmountRupees > 0 ? defaultAmountRupees.toString() : ''
@@ -58,6 +60,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
       });
 
       onSuccess();
+      notifyDataChanged();
       onClose();
     } catch (err: any) {
       setError(err.message || t('errorSaving'));

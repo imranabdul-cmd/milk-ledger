@@ -22,8 +22,11 @@ const createEntrySchema = z.object({
 const correctEntrySchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be YYYY-MM-DD').optional(),
   quantityMl: z.number().int().min(50).max(50000).optional(),
+  totalAmountRupees: z.number().nonnegative().optional(),
+  totalAmountPaise: z.number().int().nonnegative().optional(),
+  paymentStatus: z.enum(['paid', 'pending', 'partially_paid']).optional(),
   notes: z.string().max(500).optional(),
-  correctionNotes: z.string().min(2, 'Correction reason is required').max(500)
+  correctionNotes: z.string().max(500).optional()
 });
 
 const createRateSchema = z.object({
@@ -96,15 +99,21 @@ router.post('/entries', requireAuth, validate({ body: createEntrySchema }), asyn
   }
 });
 
-// PUT /api/milk/entries/:id (Correction)
+// PUT /api/milk/entries/:id (Correction/Modification)
 router.put('/entries/:id', requireAuth, validate({ body: correctEntrySchema }), async (req: Request, res: Response): Promise<void> => {
   try {
+    const totalAmountPaise = req.body.totalAmountPaise !== undefined
+      ? req.body.totalAmountPaise
+      : (req.body.totalAmountRupees !== undefined ? rupeesToPaise(req.body.totalAmountRupees) : undefined);
+
     const updated = await correctMilkEntry({
       familyId: req.user!.familyId,
       memberId: req.user!.id,
       entryId: req.params.id,
       date: req.body.date,
       quantityMl: req.body.quantityMl,
+      totalAmountPaise,
+      paymentStatus: req.body.paymentStatus,
       notes: req.body.notes,
       correctionNotes: req.body.correctionNotes,
       ipAddress: req.ip
@@ -116,8 +125,8 @@ router.put('/entries/:id', requireAuth, validate({ body: correctEntrySchema }), 
   }
 });
 
-// DELETE /api/milk/entries/:id
-router.delete('/entries/:id', requireAuth, async (req: Request, res: Response): Promise<void> => {
+// DELETE /api/milk/entries/:id (Admin only)
+router.delete('/entries/:id', requireAuth, requireAdmin, async (req: Request, res: Response): Promise<void> => {
   const familyId = req.user!.familyId;
   const entryId = req.params.id;
 
@@ -130,6 +139,18 @@ router.delete('/entries/:id', requireAuth, async (req: Request, res: Response): 
 
       if (existing.rows.length === 0) {
         throw new Error('Entry not found');
+      }
+
+      // Clean up linked immediate payments if present
+      const linkedAllocations = await client.query(
+        'SELECT payment_id FROM payment_allocations WHERE milk_entry_id = $1 AND family_id = $2',
+        [entryId, familyId]
+      );
+      for (const row of linkedAllocations.rows) {
+        await client.query(
+          `DELETE FROM payments WHERE id = $1 AND family_id = $2 AND notes LIKE 'Immediate payment for milk on%'`,
+          [row.payment_id, familyId]
+        );
       }
 
       await client.query('DELETE FROM milk_entries WHERE id = $1 AND family_id = $2', [entryId, familyId]);
@@ -146,7 +167,7 @@ router.delete('/entries/:id', requireAuth, async (req: Request, res: Response): 
       });
     });
 
-    res.json({ success: true, message: 'Milk entry deleted' });
+    res.json({ success: true, message: 'Milk entry deleted successfully' });
   } catch (error: any) {
     res.status(400).json({ error: error.message || 'Failed to delete milk entry' });
   }

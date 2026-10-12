@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useVoice } from '../context/VoiceContext';
@@ -20,9 +20,15 @@ import {
   LogOut,
   SlidersHorizontal,
   Wallet,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Edit3,
+  Trash2
 } from 'lucide-react';
 import { ExportBillModal } from '../components/ExportBillModal';
+import { CorrectionModal } from '../components/CorrectionModal';
+import { DateTimeBadge } from '../components/DateTimeBadge';
+import { AnimatedMilkGlass } from '../components/Header';
+import { useAutoSync, notifyDataChanged } from '../hooks/useAutoSync';
 
 interface MemberHomeScreenProps {
   onSwitchToAdmin?: () => void;
@@ -51,6 +57,14 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [lastSavedEntry, setLastSavedEntry] = useState<MilkEntry | null>(null);
   const [isExportModalOpen, setIsExportModalOpen] = useState<boolean>(false);
+  const [editingEntry, setEditingEntry] = useState<MilkEntry | null>(null);
+  const headerVideoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    if (headerVideoRef.current) {
+      headerVideoRef.current.play().catch(() => {});
+    }
+  }, []);
 
   // Today's date in Asia/Kolkata
   const todayDateStr = useMemo(() => {
@@ -103,8 +117,31 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
   }, [todayDateStr]);
 
   useEffect(() => {
+    document.body.classList.add('simple-view-active');
+    return () => {
+      document.body.classList.remove('simple-view-active');
+    };
+  }, []);
+
+  // Fetch immediately on mount
+  useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  // Background auto-refresh like Instagram: silent heartbeat every 8s, on focus, visibilitychange, and online
+  useAutoSync(fetchData, { intervalMs: 8000, immediate: false });
+
+  const handleDeleteTodayEntry = async (id: string) => {
+    if (!isPrivileged) return;
+    if (!window.confirm(t('deleteConfirm'))) return;
+    try {
+      await apiRequest(`/api/milk/entries/${id}`, { method: 'DELETE' });
+      fetchData();
+      notifyDataChanged();
+    } catch (err: any) {
+      alert(err.message || 'Failed to delete record');
+    }
+  };
 
   // Voice greeting on initial screen entry (if enabled)
   const speakInstruction = useCallback(() => {
@@ -183,6 +220,7 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
       }
 
       fetchData();
+      notifyDataChanged();
     } catch (err: any) {
       setSubmitError(err.message || 'Failed to save entry');
       if (language === 'ml') {
@@ -244,124 +282,128 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
   };
 
   return (
-    <div style={{ maxWidth: '480px', margin: '0 auto', padding: '0.85rem', minHeight: '100vh', background: '#f8fafc' }}>
-      {/* COMPACT & ACCESSIBLE TOP HEADER */}
-      <header
-        style={{
-          background: 'white',
-          borderRadius: 'var(--radius-xl, 24px)',
-          padding: '0.9rem 1.15rem',
-          marginBottom: '1rem',
-          boxShadow: 'var(--shadow-sm)',
-          border: '1.5px solid var(--slate-200)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-        }}
-      >
-        <div>
-          <div style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600 }}>
-            {user?.familyName || t('appName')}
+    <div className="simple-view-wrapper">
+      <div className="simple-view-content">
+        {/* COMPACT & ACCESSIBLE FROSTED TOP HEADER WITH VIDEO & ANIMATED MILK GLASS */}
+        <header className="simple-header-pill">
+          {/* Background Looping Milk Video */}
+          <video
+            ref={headerVideoRef}
+            className="simple-header-video"
+            autoPlay
+            loop
+            muted
+            playsInline
+            preload="auto"
+            aria-hidden="true"
+          >
+            <source src="/videos/simple_header_video.mp4" type="video/mp4" />
+          </video>
+          <div className="simple-header-video-overlay" />
+
+          <div className="simple-header-content">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+              <div style={{ filter: 'drop-shadow(0 2px 4px rgba(37,99,235,0.25))' }}>
+                <AnimatedMilkGlass size={28} />
+              </div>
+              <div>
+                <div style={{ fontSize: '0.74rem', color: '#475569', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.02em' }}>
+                  {user?.familyName || 'Family Milk'}
+                </div>
+                <h1 style={{ fontSize: '1.15rem', fontWeight: 900, color: '#1e3a8a', lineHeight: 1.2 }}>
+                  {language === 'ml' ? `നമസ്കാരം, ${user?.name || ''}` : language === 'ta' ? `வணக்கம், ${user?.name || ''}` : `Hello, ${user?.name || ''}`}
+                </h1>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              {/* Voice Guidance Toggle */}
+              <button
+                type="button"
+                onClick={toggleVoice}
+                className="btn-secondary"
+                style={{
+                  padding: '0.42rem 0.65rem',
+                  borderRadius: '9999px',
+                  border: voiceEnabled ? '1.5px solid #2563eb' : '1.5px solid #cbd5e1',
+                  background: voiceEnabled ? 'rgba(239, 246, 255, 0.95)' : 'rgba(255, 255, 255, 0.92)',
+                  color: voiceEnabled ? '#1d4ed8' : '#64748b',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.25rem',
+                  cursor: 'pointer',
+                  backdropFilter: 'blur(8px)',
+                }}
+                title={voiceEnabled ? t('voiceOn') : t('voiceOff')}
+              >
+                {voiceEnabled ? <Volume2 size={16} color="#2563eb" /> : <VolumeX size={16} color="#94a3b8" />}
+                <span style={{ fontSize: '0.74rem', fontWeight: 700 }}>
+                  {voiceEnabled ? t('voiceOn') : t('voiceOff')}
+                </span>
+              </button>
+
+              {/* Language Switcher */}
+              <button
+                type="button"
+                onClick={handleLanguageCycle}
+                className="btn-secondary"
+                style={{
+                  padding: '0.42rem 0.65rem',
+                  borderRadius: '9999px',
+                  border: '1.5px solid #cbd5e1',
+                  background: 'rgba(255, 255, 255, 0.92)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.25rem',
+                  cursor: 'pointer',
+                  backdropFilter: 'blur(8px)',
+                }}
+                title={t('language')}
+              >
+                <Globe size={15} color="#2563eb" />
+                <span style={{ fontSize: '0.76rem', fontWeight: 700 }}>
+                  {language === 'ml' ? 'മലയാളം' : language === 'ta' ? 'தமிழ்' : 'Eng'}
+                </span>
+              </button>
+
+              {/* Simple Logout */}
+              <button
+                type="button"
+                onClick={() => {
+                  if (window.confirm(t('logoutConfirm'))) logout();
+                }}
+                style={{
+                  background: 'rgba(255, 255, 255, 0.85)',
+                  border: '1.5px solid #cbd5e1',
+                  color: '#64748b',
+                  padding: '0.4rem',
+                  cursor: 'pointer',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+                title={t('logout')}
+              >
+                <LogOut size={16} />
+              </button>
+            </div>
           </div>
-          <h1 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#1e3a8a', lineHeight: 1.2 }}>
-            {language === 'ml' ? `നമസ്കാരം, ${user?.name || ''}` : language === 'ta' ? `வணக்கம், ${user?.name || ''}` : `Hello, ${user?.name || ''}`}
-          </h1>
-        </div>
+        </header>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-          {/* Voice Guidance Toggle */}
-          <button
-            type="button"
-            onClick={toggleVoice}
-            className="btn-secondary"
-            style={{
-              padding: '0.45rem 0.65rem',
-              borderRadius: '12px',
-              border: voiceEnabled ? '1.5px solid #2563eb' : '1.5px solid #cbd5e1',
-              background: voiceEnabled ? '#eff6ff' : 'white',
-              color: voiceEnabled ? '#1d4ed8' : '#64748b',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.25rem',
-              cursor: 'pointer',
-            }}
-            title={voiceEnabled ? t('voiceOn') : t('voiceOff')}
-          >
-            {voiceEnabled ? <Volume2 size={18} color="#2563eb" /> : <VolumeX size={18} color="#94a3b8" />}
-            <span style={{ fontSize: '0.75rem', fontWeight: 700 }}>
-              {voiceEnabled ? t('voiceOn') : t('voiceOff')}
-            </span>
-          </button>
-
-          {/* Language Switcher */}
-          <button
-            type="button"
-            onClick={handleLanguageCycle}
-            className="btn-secondary"
-            style={{
-              padding: '0.45rem 0.65rem',
-              borderRadius: '12px',
-              border: '1.5px solid #cbd5e1',
-              background: 'white',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.25rem',
-              cursor: 'pointer',
-            }}
-            title={t('language')}
-          >
-            <Globe size={16} color="#2563eb" />
-            <span style={{ fontSize: '0.78rem', fontWeight: 700 }}>
-              {language === 'ml' ? 'മലയാളം' : language === 'ta' ? 'தமிழ்' : 'Eng'}
-            </span>
-          </button>
-
-          {/* Simple Logout */}
-          <button
-            type="button"
-            onClick={() => {
-              if (window.confirm(t('logoutConfirm'))) logout();
-            }}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: '#64748b',
-              padding: '0.45rem',
-              cursor: 'pointer',
-              borderRadius: '10px',
-            }}
-            title={t('logout')}
-          >
-            <LogOut size={18} />
-          </button>
-        </div>
-      </header>
-
-      {/* ADMIN SWITCHER (Only visible for Owner/Admin to switch to full dashboard) */}
-      {isPrivileged && onSwitchToAdmin && (
-        <div style={{ marginBottom: '0.85rem', textAlign: 'right' }}>
-          <button
-            type="button"
-            onClick={onSwitchToAdmin}
-            style={{
-              background: '#f1f5f9',
-              border: '1px solid #cbd5e1',
-              padding: '0.35rem 0.75rem',
-              borderRadius: '10px',
-              fontSize: '0.78rem',
-              fontWeight: 700,
-              color: '#1e40af',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.35rem',
-              cursor: 'pointer',
-            }}
-          >
-            <SlidersHorizontal size={14} />
-            <span>{t('adminView')}</span>
-          </button>
-        </div>
-      )}
+        {/* ADMIN SWITCHER (Only visible for Owner/Admin to switch to full dashboard) */}
+        {isPrivileged && onSwitchToAdmin && (
+          <div style={{ marginBottom: '0.65rem', textAlign: 'right' }}>
+            <button
+              type="button"
+              onClick={onSwitchToAdmin}
+              className="simple-admin-pill"
+            >
+              <SlidersHorizontal size={14} />
+              <span>{t('adminView')}</span>
+            </button>
+          </div>
+        )}
 
       {/* ========================================================
           STEP 1: SELECT QUANTITY (PRIMARY FAMILY MEMBER EXPERIENCE)
@@ -369,81 +411,54 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
       {step === 'select_quantity' && (
         <>
           {/* MAIN RECORD CARD */}
-          <div
-            style={{
-              background: 'white',
-              borderRadius: 'var(--radius-xl, 28px)',
-              padding: '1.5rem 1.25rem',
-              boxShadow: 'var(--shadow-card)',
-              border: '2px solid #3b82f6',
-              marginBottom: '1.25rem',
-              textAlign: 'center',
-              position: 'relative',
-            }}
-          >
+          <div className="simple-main-card">
             {/* Speaker Button to Hear Instructions */}
             <button
               type="button"
               onClick={speakInstruction}
               style={{
                 position: 'absolute',
-                top: '1rem',
-                right: '1rem',
+                top: '1.1rem',
+                right: '1.1rem',
                 background: '#eff6ff',
                 border: '1.5px solid #bfdbfe',
                 borderRadius: '50%',
-                width: '42px',
-                height: '42px',
+                width: '40px',
+                height: '40px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 color: '#2563eb',
                 cursor: 'pointer',
-                boxShadow: '0 2px 6px rgba(37,99,235,0.15)',
+                boxShadow: '0 2px 8px rgba(37,99,235,0.18)',
               }}
               title={t('listenInstructions')}
             >
-              <Volume2 size={22} />
+              <Volume2 size={20} />
             </button>
 
-            {/* AAVIN BLUE MILK PACKET IMAGE */}
-            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '0.85rem' }}>
-              <div
+            {/* 3D MILK PACKET / POUCH ILLUSTRATION */}
+            <div className="simple-pouch-frame">
+              <img
+                src="/images/milk_pouch_3d.png"
+                alt="Aavin Milk Pouch"
                 style={{
-                  width: '150px',
-                  height: '150px',
-                  borderRadius: '20px',
-                  background: '#f0f7ff',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  padding: '8px',
-                  boxShadow: '0 8px 20px rgba(37, 99, 235, 0.12)',
-                  border: '1.5px solid #dbeafe',
+                  maxWidth: '100%',
+                  maxHeight: '100%',
+                  objectFit: 'contain',
+                  filter: 'drop-shadow(0 8px 14px rgba(37, 99, 235, 0.22))',
                 }}
-              >
-                <img
-                  src="/images/aavin-blue-milk.png"
-                  alt="Aavin Toned Milk Blue Pouch"
-                  style={{
-                    maxWidth: '100%',
-                    maxHeight: '100%',
-                    objectFit: 'contain',
-                    filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.08))',
-                  }}
-                  onError={(e) => {
-                    // Fallback to stylized milk icon if image is missing
-                    e.currentTarget.style.display = 'none';
-                  }}
-                />
-              </div>
+                onError={(e) => {
+                  e.currentTarget.src = '/images/aavin-blue-milk.png';
+                }}
+              />
             </div>
 
             {/* Title */}
-            <h2 style={{ fontSize: '1.35rem', fontWeight: 800, color: '#0f172a', marginBottom: '0.35rem' }}>
+            <h2 style={{ fontSize: '1.4rem', fontWeight: 900, color: '#0f172a', marginBottom: '0.25rem', letterSpacing: '-0.01em' }}>
               {t('recordTodayMilk')}
             </h2>
-            <p style={{ fontSize: '0.88rem', color: '#64748b', marginBottom: '1.25rem' }}>
+            <p style={{ fontSize: '0.88rem', color: '#64748b', fontWeight: 600, marginBottom: '1.25rem' }}>
               {friendlyTodayDate}
             </p>
 
@@ -453,80 +468,66 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
               <button
                 type="button"
                 onClick={() => handleSelectQuantity(500)}
-                style={{
-                  minHeight: '105px',
-                  background: 'linear-gradient(145deg, #ffffff 0%, #eff6ff 100%)',
-                  border: '2.5px solid #2563eb',
-                  borderRadius: '22px',
-                  padding: '0.9rem 0.5rem',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  boxShadow: '0 6px 14px rgba(37, 99, 235, 0.15)',
-                  transition: 'transform 0.15s ease, box-shadow 0.15s ease',
-                }}
+                className="simple-qty-btn"
               >
-                <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#1e40af', lineHeight: 1.1 }}>
+                <div style={{ fontSize: '1.65rem', fontWeight: 900, color: '#1e40af', lineHeight: 1.1 }}>
                   {t('halfLitre')}
                 </div>
-                <div style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 700, marginTop: '2px' }}>
+                <div style={{ fontSize: '0.82rem', color: '#64748b', fontWeight: 700, marginTop: '3px' }}>
                   {t('halfLitreSub')}
                 </div>
                 <div
                   style={{
-                    marginTop: '6px',
-                    background: '#2563eb',
+                    marginTop: '8px',
+                    background: 'linear-gradient(135deg, #1e40af 0%, #2563eb 100%)',
                     color: 'white',
-                    padding: '0.2rem 0.65rem',
-                    borderRadius: '12px',
-                    fontSize: '0.95rem',
+                    padding: '0.22rem 0.75rem',
+                    borderRadius: '9999px',
+                    fontSize: '0.92rem',
                     fontWeight: 800,
+                    boxShadow: '0 2px 6px rgba(37, 99, 235, 0.3)',
+                    zIndex: 2,
                   }}
                 >
                   ₹{(Math.round(0.5 * activeRatePaise) / 100).toFixed(0)}
                 </div>
+                {/* Liquid milk splash SVG wave decoration */}
+                <svg className="simple-qty-splash-wave" viewBox="0 0 100 20" preserveAspectRatio="none">
+                  <path d="M0,10 C30,18 70,2 100,10 L100,20 L0,20 Z" fill="#93c5fd" />
+                </svg>
               </button>
 
               {/* BUTTON 2: 1 LITRE (1000 ML) */}
               <button
                 type="button"
                 onClick={() => handleSelectQuantity(1000)}
-                style={{
-                  minHeight: '105px',
-                  background: 'linear-gradient(145deg, #ffffff 0%, #eff6ff 100%)',
-                  border: '2.5px solid #2563eb',
-                  borderRadius: '22px',
-                  padding: '0.9rem 0.5rem',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  boxShadow: '0 6px 14px rgba(37, 99, 235, 0.15)',
-                  transition: 'transform 0.15s ease, box-shadow 0.15s ease',
-                }}
+                className="simple-qty-btn"
               >
-                <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#1e40af', lineHeight: 1.1 }}>
+                <div style={{ fontSize: '1.65rem', fontWeight: 900, color: '#1e40af', lineHeight: 1.1 }}>
                   {t('oneLitre')}
                 </div>
-                <div style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 700, marginTop: '2px' }}>
+                <div style={{ fontSize: '0.82rem', color: '#64748b', fontWeight: 700, marginTop: '3px' }}>
                   {t('oneLitreSub')}
                 </div>
                 <div
                   style={{
-                    marginTop: '6px',
-                    background: '#2563eb',
+                    marginTop: '8px',
+                    background: 'linear-gradient(135deg, #1e40af 0%, #2563eb 100%)',
                     color: 'white',
-                    padding: '0.2rem 0.65rem',
-                    borderRadius: '12px',
-                    fontSize: '0.95rem',
+                    padding: '0.22rem 0.75rem',
+                    borderRadius: '9999px',
+                    fontSize: '0.92rem',
                     fontWeight: 800,
+                    boxShadow: '0 2px 6px rgba(37, 99, 235, 0.3)',
+                    zIndex: 2,
                   }}
                 >
                   ₹{(activeRatePaise / 100).toFixed(0)}
                 </div>
+                {/* Liquid milk splash SVG wave decoration */}
+                <svg className="simple-qty-splash-wave" viewBox="0 0 100 20" preserveAspectRatio="none">
+                  <path d="M0,10 C30,18 70,2 100,10 L100,20 L0,20 Z" fill="#93c5fd" />
+                </svg>
               </button>
             </div>
 
@@ -541,7 +542,7 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
               }}
               style={{
                 width: '100%',
-                background: '#f8fafc',
+                background: 'rgba(248, 250, 252, 0.9)',
                 border: '1.5px dashed #94a3b8',
                 borderRadius: '16px',
                 padding: '0.65rem',
@@ -553,6 +554,7 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
                 justifyContent: 'center',
                 gap: '0.4rem',
                 cursor: 'pointer',
+                transition: 'all 0.2s ease',
               }}
             >
               <Droplets size={17} color="#2563eb" />
@@ -561,16 +563,7 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
           </div>
 
           {/* TODAY'S RECORDED MILK STATUS CARD */}
-          <div
-            style={{
-              background: 'white',
-              borderRadius: 'var(--radius-lg, 20px)',
-              padding: '1.1rem 1.25rem',
-              boxShadow: 'var(--shadow-sm)',
-              border: '1px solid var(--slate-200)',
-              marginBottom: '1rem',
-            }}
-          >
+          <div className="simple-sub-card">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#0f172a', fontWeight: 800, fontSize: '0.95rem' }}>
                 <Calendar size={18} color="#2563eb" />
@@ -594,29 +587,77 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
                       justifyContent: 'space-between',
                     }}
                   >
-                    <div>
-                      <div style={{ fontWeight: 800, color: '#166534', fontSize: '1.05rem' }}>
-                        {entry.quantityMl >= 1000 ? `${(entry.quantityMl / 1000).toFixed(1).replace('.0', '')} L` : `${entry.quantityMl} ml`}
-                        <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#15803d', marginLeft: '0.4rem' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                      <div style={{ fontWeight: 800, color: '#166534', fontSize: '1.05rem', display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap' }}>
+                        <span>{entry.quantityMl >= 1000 ? `${(entry.quantityMl / 1000).toFixed(1).replace('.0', '')} L` : `${entry.quantityMl} ml`}</span>
+                        <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#15803d' }}>
                           ({formatPaise(entry.totalAmountPaise)})
                         </span>
                       </div>
-                      <div style={{ fontSize: '0.75rem', color: '#166534' }}>
-                        {entry.paymentStatus === 'paid' ? t('paid') : t('pending')} • {entry.createdByName || user?.name}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+                        <DateTimeBadge date={entry.date} createdAt={entry.createdAt} />
+                        {(entry.createdByName || user?.name) && (
+                          <span className="activity-user-pill" style={{ background: '#f0fdf4', borderColor: '#bbf7d0', color: '#166534' }}>
+                            👤 {entry.createdByName || user?.name}
+                          </span>
+                        )}
                       </div>
                     </div>
 
-                    <div
-                      style={{
-                        background: entry.paymentStatus === 'paid' ? '#dcfce7' : '#fef3c7',
-                        color: entry.paymentStatus === 'paid' ? '#15803d' : '#b45309',
-                        padding: '0.3rem 0.65rem',
-                        borderRadius: '10px',
-                        fontSize: '0.8rem',
-                        fontWeight: 800,
-                      }}
-                    >
-                      {entry.paymentStatus === 'paid' ? '✓ ' + t('paid') : '⏱ ' + t('pending')}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexShrink: 0 }}>
+                      <div
+                        style={{
+                          background: entry.paymentStatus === 'paid' ? '#dcfce7' : '#fef3c7',
+                          color: entry.paymentStatus === 'paid' ? '#15803d' : '#b45309',
+                          padding: '0.3rem 0.65rem',
+                          borderRadius: '10px',
+                          fontSize: '0.8rem',
+                          fontWeight: 800,
+                        }}
+                      >
+                        {entry.paymentStatus === 'paid' ? '✓ ' + t('paid') : '⏱ ' + t('pending')}
+                      </div>
+
+                      {isPrivileged && (
+                        <div style={{ display: 'flex', gap: '0.25rem' }}>
+                          <button
+                            type="button"
+                            onClick={() => setEditingEntry(entry)}
+                            title="Edit"
+                            style={{
+                              background: '#fff',
+                              border: '1px solid #cbd5e1',
+                              borderRadius: '8px',
+                              padding: '0.35rem',
+                              color: '#334155',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                            }}
+                          >
+                            <Edit3 size={13} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteTodayEntry(entry.id)}
+                            title="Delete"
+                            style={{
+                              background: '#fff',
+                              border: '1px solid #fecaca',
+                              borderRadius: '8px',
+                              padding: '0.35rem',
+                              color: '#dc2626',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                            }}
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -630,16 +671,12 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
 
           {/* FAMILY BALANCE OVERVIEW CARD */}
           <div
+            className="simple-sub-card"
             style={{
-              background: 'white',
-              borderRadius: 'var(--radius-lg, 20px)',
-              padding: '1.1rem 1.25rem',
-              boxShadow: 'var(--shadow-sm)',
-              border: '1px solid var(--slate-200)',
-              marginBottom: '1.5rem',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
+              marginBottom: '1.5rem',
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -1210,12 +1247,18 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
                   borderBottom: '1px solid #f1f5f9',
                 }}
               >
-                <div>
-                  <div style={{ fontWeight: 700, color: '#0f172a', fontSize: '0.92rem' }}>
-                    {entry.quantityMl >= 1000 ? `${(entry.quantityMl / 1000).toFixed(1).replace('.0', '')} L` : `${entry.quantityMl} ml`} • {formatPaise(entry.totalAmountPaise)}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                  <div style={{ fontWeight: 700, color: '#0f172a', fontSize: '0.92rem', display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap' }}>
+                    <span>{entry.quantityMl >= 1000 ? `${(entry.quantityMl / 1000).toFixed(1).replace('.0', '')} L` : `${entry.quantityMl} ml`}</span>
+                    <span style={{ color: '#2563eb', fontWeight: 700 }}>• {formatPaise(entry.totalAmountPaise)}</span>
                   </div>
-                  <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                    {entry.date} {entry.createdByName ? `• ${entry.createdByName}` : ''}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+                    <DateTimeBadge date={entry.date} createdAt={entry.createdAt} />
+                    {entry.createdByName && (
+                      <span className="activity-user-pill">
+                        👤 {entry.createdByName}
+                      </span>
+                    )}
                   </div>
                 </div>
 
@@ -1243,6 +1286,18 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
         onClose={() => setIsExportModalOpen(false)}
         yearMonth={todayDateStr.substring(0, 7)}
       />
+
+      {/* Correction / Edit Modal */}
+      <CorrectionModal
+        isOpen={Boolean(editingEntry)}
+        onClose={() => setEditingEntry(null)}
+        onSuccess={() => {
+          fetchData();
+          notifyDataChanged();
+        }}
+        entry={editingEntry}
+      />
+      </div>
     </div>
   );
 };

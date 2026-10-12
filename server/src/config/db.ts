@@ -1,5 +1,10 @@
-import { Pool, PoolClient, QueryResult, QueryResultRow } from 'pg';
+import { Pool, PoolClient, QueryResult, QueryResultRow, types } from 'pg';
 import { config } from './env.js';
+
+// PostgreSQL DATE type (OID 1082) parser: returns 'YYYY-MM-DD' as string directly,
+// preventing node-pg from converting DATE to a Date object that JSON.stringify converts to UTC
+// (which caused 2026-10-11 in India to serialize as 2026-10-10T18:30:00Z).
+types.setTypeParser(1082, (val: string) => val);
 
 let pool: Pool | null = null;
 

@@ -1,10 +1,19 @@
-// Minimal service worker for PWA installability and offline asset shell
-const CACHE_NAME = 'family-milk-v1';
+// High-performance service worker for PWA Home Screen install and instant offline launch
+const CACHE_NAME = 'family-milk-v2';
+const STATIC_ASSETS = [
+  '/',
+  '/index.html',
+  '/manifest.json',
+  '/favicon.png',
+  '/icon-192.png',
+  '/icon-512.png',
+  '/apple-touch-icon.png'
+];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(['/', '/index.html', '/manifest.json']);
+      return cache.addAll(STATIC_ASSETS);
     }).then(() => self.skipWaiting())
   );
 });
@@ -24,14 +33,30 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Let API requests bypass cache completely
+  // ALL API requests bypass service worker cache to ensure real-time fresh data
   if (event.request.url.includes('/api/')) {
     return;
   }
 
   event.respondWith(
-    caches.match(event.request).then((response) => {
-      return response || fetch(event.request);
+    caches.match(event.request).then((cachedResponse) => {
+      if (cachedResponse) {
+        return cachedResponse;
+      }
+      return fetch(event.request).then((networkResponse) => {
+        if (networkResponse.status === 200 && event.request.method === 'GET') {
+          const resClone = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, resClone);
+          });
+        }
+        return networkResponse;
+      }).catch(() => {
+        // Fallback to app shell for navigation requests
+        if (event.request.mode === 'navigate') {
+          return caches.match('/index.html');
+        }
+      });
     })
   );
 });

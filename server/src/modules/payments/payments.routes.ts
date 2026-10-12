@@ -1,9 +1,10 @@
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
-import { query } from '../../config/db.js';
-import { requireAuth } from '../../middleware/auth.js';
+import { query, withTransaction } from '../../config/db.js';
+import { requireAuth, requireAdmin } from '../../middleware/auth.js';
 import { validate } from '../../middleware/validate.js';
 import { createPayment } from './payments.service.js';
+import { recordAuditLog } from '../audit/audit.service.js';
 import { rupeesToPaise } from '@family-milk/shared';
 import { getMonthDateRange } from '../../utils/timezone.js';
 
@@ -110,6 +111,42 @@ router.get('/:id', requireAuth, async (req: Request, res: Response): Promise<voi
       allocations: allocRes.rows
     }
   });
+});
+
+// DELETE /api/payments/:id (Admin only)
+router.delete('/:id', requireAuth, requireAdmin, async (req: Request, res: Response): Promise<void> => {
+  const familyId = req.user!.familyId;
+  const paymentId = req.params.id;
+
+  try {
+    await withTransaction(async (client) => {
+      const existing = await client.query(
+        'SELECT * FROM payments WHERE id = $1 AND family_id = $2',
+        [paymentId, familyId]
+      );
+
+      if (existing.rows.length === 0) {
+        throw new Error('Payment not found');
+      }
+
+      await client.query('DELETE FROM payments WHERE id = $1 AND family_id = $2', [paymentId, familyId]);
+
+      await recordAuditLog({
+        familyId,
+        memberId: req.user!.id,
+        action: 'delete',
+        entityType: 'payment',
+        entityId: paymentId,
+        oldValues: existing.rows[0],
+        ipAddress: req.ip,
+        client
+      });
+    });
+
+    res.json({ success: true, message: 'Payment deleted successfully' });
+  } catch (error: any) {
+    res.status(400).json({ error: error.message || 'Failed to delete payment' });
+  }
 });
 
 export default router;

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import {
@@ -14,8 +14,6 @@ import {
   LogIn,
   Eye,
   EyeOff,
-  Play,
-  Pause,
   Sparkles,
   Loader2
 } from 'lucide-react';
@@ -41,20 +39,25 @@ export const LoginPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  // Video playback controls
+  // Video reference with guaranteed continuous seamless 4K autoplay
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [isPlaying, setIsPlaying] = useState<boolean>(true);
 
-  const toggleVideoPlayback = () => {
-    if (!videoRef.current) return;
-    if (videoRef.current.paused) {
-      videoRef.current.play();
-      setIsPlaying(true);
-    } else {
-      videoRef.current.pause();
-      setIsPlaying(false);
-    }
-  };
+  useEffect(() => {
+    const playVideo = () => {
+      if (videoRef.current) {
+        videoRef.current.play().catch(() => {});
+      }
+    };
+    playVideo();
+
+    // Ensure video never pauses even if tab is switched or minimized
+    document.addEventListener('visibilitychange', playVideo);
+    window.addEventListener('focus', playVideo);
+    return () => {
+      document.removeEventListener('visibilitychange', playVideo);
+      window.removeEventListener('focus', playVideo);
+    };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -96,6 +99,7 @@ export const LoginPage: React.FC = () => {
         loop
         muted
         playsInline
+        preload="auto"
         poster="/videos/milk_thumb.jpg"
         aria-hidden="true"
       >
@@ -104,9 +108,6 @@ export const LoginPage: React.FC = () => {
 
       {/* Atmospheric dark gradient overlay for crystal-clear foreground readability */}
       <div className="login-video-overlay" />
-
-      {/* Ambient glowing aura behind the card */}
-      <div className="login-glow-orb" />
 
       {/* ==============================================================
           TOP FLOATING NAVIGATION BAR
@@ -146,26 +147,8 @@ export const LoginPage: React.FC = () => {
           </span>
         </div>
 
-        {/* Right Action Controls: Video Play/Pause & Language Selector */}
+        {/* Right Action Controls: Language Selector */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          {/* Video Toggle Button */}
-          <button
-            type="button"
-            onClick={toggleVideoPlayback}
-            className="login-brand-pill"
-            style={{
-              cursor: 'pointer',
-              padding: '0.45rem',
-              width: '36px',
-              height: '36px',
-              justifyContent: 'center'
-            }}
-            title={isPlaying ? 'Pause Background Video' : 'Play Background Video'}
-            aria-label="Toggle background video"
-          >
-            {isPlaying ? <Pause size={15} color="#94a3b8" /> : <Play size={15} color="#38bdf8" />}
-          </button>
-
           {/* Quick Language Switcher Pills */}
           <div
             style={{
@@ -253,16 +236,18 @@ export const LoginPage: React.FC = () => {
               display: 'inline-flex',
               alignItems: 'center',
               gap: '0.35rem',
-              background: '#eff6ff',
-              border: '1px solid #bfdbfe',
+              background: 'rgba(255, 255, 255, 0.2)',
+              backdropFilter: 'blur(8px)',
+              border: '1.5px solid rgba(255, 255, 255, 0.35)',
               color: '#1d4ed8',
               fontSize: '0.72rem',
               fontWeight: 800,
-              padding: '0.2rem 0.65rem',
+              padding: '0.22rem 0.75rem',
               borderRadius: '999px',
               marginBottom: '0.45rem',
               letterSpacing: '0.02em',
-              textTransform: 'uppercase'
+              textTransform: 'uppercase',
+              boxShadow: '0 2px 8px rgba(37, 99, 235, 0.12)'
             }}
           >
             <Sparkles size={12} color="#2563eb" />
@@ -541,19 +526,20 @@ export const LoginPage: React.FC = () => {
           style={{
             marginTop: '1.35rem',
             padding: '0.75rem 0.95rem',
-            background: 'rgba(240, 253, 244, 0.85)',
-            border: '1.5px solid #bbf7d0',
+            background: 'rgba(255, 255, 255, 0.22)',
+            backdropFilter: 'blur(8px)',
+            border: '1.5px solid rgba(255, 255, 255, 0.35)',
             borderRadius: '16px',
             fontSize: '0.8rem',
-            color: '#15803d',
+            color: '#064e3b',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             gap: '0.5rem',
-            boxShadow: '0 2px 8px rgba(16, 185, 129, 0.08)'
+            boxShadow: '0 4px 14px rgba(0, 0, 0, 0.08)'
           }}
         >
-          <ShieldCheck size={18} color="#16a34a" style={{ flexShrink: 0 }} />
+          <ShieldCheck size={18} color="#15803d" style={{ flexShrink: 0 }} />
           <span style={{ fontWeight: 700 }}>
             {t('persistentLoginNote')}
           </span>

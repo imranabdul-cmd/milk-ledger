@@ -38,8 +38,18 @@ const AppContent: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f8fafc', color: '#64748b', fontSize: '1.1rem', fontWeight: 600 }}>
-        Loading Family Milk Account...
+      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#0b132b', color: '#ffffff', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+        <img
+          src="/icon-192.png"
+          alt="Family Milk"
+          style={{ width: 80, height: 80, borderRadius: 20, boxShadow: '0 8px 32px rgba(37,99,235,0.4)', marginBottom: '1.25rem' }}
+        />
+        <div style={{ fontSize: '1.25rem', fontWeight: 800, letterSpacing: '-0.01em', color: '#ffffff' }}>
+          Family Milk
+        </div>
+        <div style={{ fontSize: '0.8rem', color: '#94a3b8', marginTop: '0.35rem', fontWeight: 500 }}>
+          Connecting ledger...
+        </div>
       </div>
     );
   }
@@ -64,11 +74,9 @@ const AppContent: React.FC = () => {
 
   if (isOrdinaryMember || adminViewMode === 'simple') {
     return (
-      <div className="app-shell" style={{ background: '#f8fafc', minHeight: '100vh', paddingBottom: '20px' }}>
-        <MemberHomeScreen
-          onSwitchToAdmin={!isOrdinaryMember ? () => setAdminViewMode('admin') : undefined}
-        />
-      </div>
+      <MemberHomeScreen
+        onSwitchToAdmin={!isOrdinaryMember ? () => setAdminViewMode('admin') : undefined}
+      />
     );
   }
 

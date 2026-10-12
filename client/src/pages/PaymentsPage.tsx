@@ -1,9 +1,11 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { apiRequest } from '../api/client';
 import { Payment, formatPaise } from '@family-milk/shared';
 import { PaymentModal } from '../components/PaymentModal';
+import { DateTimeBadge } from '../components/DateTimeBadge';
 import { CreditCard, Plus, Filter } from 'lucide-react';
+import { useAutoSync, notifyDataChanged } from '../hooks/useAutoSync';
 
 export const PaymentsPage: React.FC = () => {
   const { t, language } = useLanguage();
@@ -14,8 +16,8 @@ export const PaymentsPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
-  const fetchPayments = useCallback(async () => {
-    setIsLoading(true);
+  const fetchPayments = useCallback(async (silent = false) => {
+    if (!silent) setIsLoading(true);
     try {
       const res = await apiRequest<{ payments: Payment[] }>(`/api/payments?month=${selectedMonth}`);
       setPayments(res.payments);
@@ -26,9 +28,13 @@ export const PaymentsPage: React.FC = () => {
     }
   }, [selectedMonth]);
 
+  // Fetch immediately on mount & when month changes
   useEffect(() => {
     fetchPayments();
   }, [fetchPayments]);
+
+  // Silent background sync
+  useAutoSync(fetchPayments, { intervalMs: 8000, immediate: false });
 
   const totalPaymentsAmount = payments.reduce((acc, p) => acc + p.amountPaise, 0);
 
@@ -93,10 +99,15 @@ export const PaymentsPage: React.FC = () => {
                     {p.paymentMethod.toUpperCase()} {t('payments')}
                   </div>
                   <div className="activity-meta">
-                    📅 {p.date} {p.createdByName ? `• ${p.createdByName}` : ''}
+                    <DateTimeBadge date={p.date} createdAt={p.createdAt} />
+                    {p.createdByName && (
+                      <span className="activity-user-pill">
+                        👤 {p.createdByName}
+                      </span>
+                    )}
                   </div>
                   {p.notes && (
-                    <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '0.2rem' }}>
+                    <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '0.25rem', fontStyle: 'italic' }}>
                       "{p.notes}"
                     </div>
                   )}
@@ -119,7 +130,10 @@ export const PaymentsPage: React.FC = () => {
       <PaymentModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        onSuccess={fetchPayments}
+        onSuccess={() => {
+          fetchPayments(true);
+          notifyDataChanged();
+        }}
       />
     </div>
   );

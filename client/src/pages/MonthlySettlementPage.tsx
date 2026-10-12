@@ -1,10 +1,12 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import { apiRequest } from '../api/client';
 import { DashboardSummary, formatPaise, MonthlyClosure } from '@family-milk/shared';
 import { ExportBillModal } from '../components/ExportBillModal';
 import { FileText, FileSpreadsheet, Lock, Calendar } from 'lucide-react';
+import { formatDisplayMonthYear } from '../utils/dateFormatter';
+import { useAutoSync, notifyDataChanged } from '../hooks/useAutoSync';
 
 export const MonthlySettlementPage: React.FC = () => {
   const { t, language } = useLanguage();
@@ -18,8 +20,8 @@ export const MonthlySettlementPage: React.FC = () => {
   const [isExportOpen, setIsExportOpen] = useState<boolean>(false);
   const [isClosing, setIsClosing] = useState<boolean>(false);
 
-  const fetchSettlementData = useCallback(async () => {
-    setIsLoading(true);
+  const fetchSettlementData = useCallback(async (silent = false) => {
+    if (!silent) setIsLoading(true);
     try {
       const [sumRes, closureRes] = await Promise.all([
         apiRequest<{ summary: DashboardSummary }>(`/api/settlement/summary?month=${selectedMonth}`),
@@ -34,9 +36,12 @@ export const MonthlySettlementPage: React.FC = () => {
     }
   }, [selectedMonth]);
 
+  // Fetch immediately on mount & when month changes
   useEffect(() => {
     fetchSettlementData();
   }, [fetchSettlementData]);
+
+  useAutoSync(fetchSettlementData, { intervalMs: 10000, immediate: false });
 
   const handleCloseMonth = async () => {
     if (!window.confirm(t('closeMonthConfirm'))) return;
@@ -51,7 +56,8 @@ export const MonthlySettlementPage: React.FC = () => {
         }),
       });
       alert(language === 'ml' ? 'മാസത്തെ കണക്ക് ഫ്രീസ് ചെയ്തു!' : 'Month statement officially closed!');
-      fetchSettlementData();
+      fetchSettlementData(true);
+      notifyDataChanged();
     } catch (err: any) {
       alert(err.message || 'Failed to close month');
     } finally {
@@ -73,7 +79,7 @@ export const MonthlySettlementPage: React.FC = () => {
             {t('monthlySettlement')}
           </h2>
           <p style={{ fontSize: '0.85rem', color: '#64748b' }}>
-            {selectedMonth} {isCurrentMonthClosed ? '(Locked/Frozen)' : '(Active)'}
+            {formatDisplayMonthYear(selectedMonth, language)} • {isCurrentMonthClosed ? '🔒 (Locked/Frozen)' : '🟢 (Active)'}
           </p>
         </div>
 
@@ -205,7 +211,7 @@ export const MonthlySettlementPage: React.FC = () => {
                         <Lock size={20} />
                       </div>
                       <div>
-                        <div className="activity-title">{c.yearMonth}</div>
+                        <div className="activity-title">{formatDisplayMonthYear(c.yearMonth, language)}</div>
                         <div className="activity-meta">
                           {c.totalLitres} L • {c.purchaseDays} days
                         </div>

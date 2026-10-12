@@ -3,8 +3,10 @@
   "short_name": "Milk Account",
   "description": "Daily family milk purchase tracker and monthly settlement",
   "start_url": "/",
+  "scope": "/",
+  "id": "/",
   "display": "standalone",
-  "background_color": "#f8fafc",
+  "background_color": "#0b132b",
   "theme_color": "#1e40af",
   "orientation": "portrait-primary",
   "icons": [

@@ -46,8 +46,8 @@ export const config = {
   databaseUrl: process.env.DATABASE_URL || '',
   databaseSsl: process.env.DATABASE_SSL === 'true' || process.env.NODE_ENV === 'production',
   jwtSecret: resolveJwtSecret(),
-  jwtExpiresIn: process.env.JWT_EXPIRES_IN || '15m',
-  refreshTokenExpiresInDays: parseInt(process.env.REFRESH_TOKEN_EXPIRES_IN_DAYS || '30', 10),
+  jwtExpiresIn: process.env.JWT_EXPIRES_IN || '90d',
+  refreshTokenExpiresInDays: parseInt(process.env.REFRESH_TOKEN_EXPIRES_IN_DAYS || '365', 10),
   timezone: process.env.TZ || 'Asia/Kolkata',
 
   // Initial bootstrap settings

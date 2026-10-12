@@ -146,6 +146,7 @@ export interface DashboardSummary {
     quantityMl?: number;
     memberName: string;
     status?: PaymentStatus;
+    createdAt?: string;
   }>;
 }
 

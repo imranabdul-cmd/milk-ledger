@@ -3,6 +3,8 @@ import { useLanguage } from '../context/LanguageContext';
 import { apiRequest } from '../api/client';
 import { calculateMilkCostPaise, formatPaise } from '@family-milk/shared';
 import { X, Check, Clock, Droplets, AlertCircle } from 'lucide-react';
+import { getKolkataTodayDateString } from '../utils/dateFormatter';
+import { notifyDataChanged } from '../hooks/useAutoSync';
 
 interface QuickPurchaseModalProps {
   isOpen: boolean;
@@ -21,8 +23,8 @@ export const QuickPurchaseModal: React.FC<QuickPurchaseModalProps> = ({
 }) => {
   const { t, language } = useLanguage();
 
-  // Today in local YYYY-MM-DD
-  const todayStr = new Date().toISOString().substring(0, 10);
+  // Today in Asia/Kolkata
+  const todayStr = getKolkataTodayDateString();
 
   const [date, setDate] = useState<string>(todayStr);
   const [quantityMl, setQuantityMl] = useState<number>(initialQuantityMl);
@@ -76,6 +78,7 @@ export const QuickPurchaseModal: React.FC<QuickPurchaseModalProps> = ({
       });
 
       onSuccess();
+      notifyDataChanged();
       onClose();
     } catch (err: any) {
       setError(err.message || t('errorSaving'));

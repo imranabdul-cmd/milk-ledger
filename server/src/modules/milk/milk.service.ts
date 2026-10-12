@@ -19,8 +19,10 @@ export interface UpdateMilkEntryInput {
   entryId: string;
   date?: string;
   quantityMl?: number;
+  totalAmountPaise?: number;
+  paymentStatus?: PaymentStatus;
   notes?: string;
-  correctionNotes: string;
+  correctionNotes?: string;
   ipAddress?: string;
 }
 
@@ -175,13 +177,25 @@ export async function correctMilkEntry(input: UpdateMilkEntryInput): Promise<Mil
 
     const existing = existingRes.rows[0];
 
-    const newDate = input.date || existing.date.toISOString().substring(0, 10);
+    const rawExistingDate = typeof existing.date === 'string'
+      ? existing.date
+      : (existing.date instanceof Date ? existing.date.toISOString().substring(0, 10) : String(existing.date));
+
+    const newDate = input.date || rawExistingDate;
     const newQuantityMl = input.quantityMl !== undefined ? input.quantityMl : existing.quantity_ml;
     const newNotes = input.notes !== undefined ? input.notes : existing.notes;
+    const newPaymentStatus = input.paymentStatus || existing.payment_status;
+    const correctionReason = input.correctionNotes && input.correctionNotes.trim()
+      ? input.correctionNotes.trim()
+      : 'Updated by admin';
 
     // Resolve rate for newDate
     const ratePaise = await getApplicableRate(input.familyId, newDate, client);
-    const newTotalAmountPaise = calculateMilkCostPaise(newQuantityMl, ratePaise);
+
+    // If explicit amount passed, use it; otherwise compute from quantity & rate
+    const newTotalAmountPaise = input.totalAmountPaise !== undefined
+      ? input.totalAmountPaise
+      : calculateMilkCostPaise(newQuantityMl, ratePaise);
 
     // Update milk_entries
     const updateRes = await client.query(
@@ -190,11 +204,12 @@ export async function correctMilkEntry(input: UpdateMilkEntryInput): Promise<Mil
            quantity_ml = $2,
            rate_paise_per_litre = $3,
            total_amount_paise = $4,
-           notes = $5,
+           payment_status = $5,
+           notes = $6,
            is_corrected = true,
-           correction_notes = $6,
+           correction_notes = $7,
            updated_at = NOW()
-       WHERE id = $7 AND family_id = $8
+       WHERE id = $8 AND family_id = $9
        RETURNING id, family_id as "familyId", member_id as "memberId",
                  date, quantity_ml as "quantityMl", rate_paise_per_litre as "ratePaisePerLitre",
                  total_amount_paise as "totalAmountPaise", payment_status as "paymentStatus",
@@ -205,8 +220,9 @@ export async function correctMilkEntry(input: UpdateMilkEntryInput): Promise<Mil
         newQuantityMl,
         ratePaise,
         newTotalAmountPaise,
+        newPaymentStatus,
         newNotes,
-        input.correctionNotes,
+        correctionReason,
         input.entryId,
         input.familyId
       ]
@@ -222,7 +238,7 @@ export async function correctMilkEntry(input: UpdateMilkEntryInput): Promise<Mil
       entityType: 'milk_entry',
       entityId: input.entryId,
       oldValues: existing,
-      newValues: { ...updatedEntry, correctionReason: input.correctionNotes },
+      newValues: { ...updatedEntry, correctionReason },
       ipAddress: input.ipAddress,
       client
     });

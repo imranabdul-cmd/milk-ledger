@@ -60,22 +60,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               setUser(refreshed.user);
               setIsLoading(false);
               return;
+            } else {
+              // Explicit 401 and refresh token rejected
+              setToken(null);
+              setUser(null);
+              localStorage.removeItem('milk_token');
+              localStorage.removeItem('milk_user');
+            }
+          } else {
+            // Network error / offline / server connecting:
+            // Keep user logged in with locally stored profile!
+            if (user) {
+              setIsLoading(false);
+              return;
             }
           }
         }
-      }
-
-      // 2. If no valid access token, attempt silent refresh via persistent HttpOnly cookie
-      // (This automatically logs in users when app reopens, phone restarts, or PWA launches)
-      const refreshed = await silentRefreshSession();
-      if (refreshed) {
-        setToken(refreshed.token);
-        setUser(refreshed.user);
       } else {
-        setToken(null);
-        setUser(null);
-        localStorage.removeItem('milk_token');
-        localStorage.removeItem('milk_user');
+        // 2. If no local token, attempt silent refresh via persistent HttpOnly cookie
+        const refreshed = await silentRefreshSession();
+        if (refreshed) {
+          setToken(refreshed.token);
+          setUser(refreshed.user);
+        }
       }
 
       setIsLoading(false);
