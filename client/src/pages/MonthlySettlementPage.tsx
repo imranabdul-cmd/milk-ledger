@@ -4,7 +4,9 @@ import { useAuth } from '../context/AuthContext';
 import { apiRequest } from '../api/client';
 import { DashboardSummary, formatPaise, MonthlyClosure } from '@family-milk/shared';
 import { ExportBillModal } from '../components/ExportBillModal';
-import { FileText, FileSpreadsheet, Lock, Calendar } from 'lucide-react';
+import { SettlementPaymentModal } from '../components/SettlementPaymentModal';
+import { MonthSettlementDetailModal } from '../components/MonthSettlementDetailModal';
+import { FileText, FileSpreadsheet, Lock, Calendar, CheckCircle2 } from 'lucide-react';
 import { formatDisplayMonthYear } from '../utils/dateFormatter';
 import { useAutoSync, notifyDataChanged } from '../hooks/useAutoSync';
 import { useToast } from '../context/ToastContext';
@@ -20,6 +22,8 @@ export const MonthlySettlementPage: React.FC = () => {
   const [closures, setClosures] = useState<MonthlyClosure[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isExportOpen, setIsExportOpen] = useState<boolean>(false);
+  const [isSettlementModalOpen, setIsSettlementModalOpen] = useState<boolean>(false);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState<boolean>(false);
   const [isClosing, setIsClosing] = useState<boolean>(false);
 
   const fetchSettlementData = useCallback(async (silent = false) => {
@@ -89,14 +93,26 @@ export const MonthlySettlementPage: React.FC = () => {
           </p>
         </div>
 
-        <button
-          className="btn-primary-big"
-          style={{ width: 'auto', minHeight: '42px', padding: '0.5rem 1.1rem', fontSize: '0.9rem', gap: '0.5rem', background: '#059669', borderColor: '#059669' }}
-          onClick={() => setIsExportOpen(true)}
-        >
-          <FileSpreadsheet size={18} />
-          <span>{t('exportBill')}</span>
-        </button>
+        <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center', flexWrap: 'wrap' }}>
+          <button
+            type="button"
+            className="btn-secondary"
+            style={{ minHeight: '42px', padding: '0.5rem 1rem', fontSize: '0.88rem', gap: '0.45rem', borderColor: '#2563eb', color: '#1d4ed8', background: '#eff6ff' }}
+            onClick={() => setIsDetailModalOpen(true)}
+          >
+            <FileText size={17} />
+            <span>{t('viewFullDetails')}</span>
+          </button>
+
+          <button
+            className="btn-primary-big"
+            style={{ width: 'auto', minHeight: '42px', padding: '0.5rem 1.1rem', fontSize: '0.9rem', gap: '0.5rem', background: '#059669', borderColor: '#059669' }}
+            onClick={() => setIsExportOpen(true)}
+          >
+            <FileSpreadsheet size={18} />
+            <span>{t('exportBill')}</span>
+          </button>
+        </div>
       </div>
 
       {/* Month Selector Bar */}
@@ -185,6 +201,55 @@ export const MonthlySettlementPage: React.FC = () => {
                   {isDue ? `🔴 ${t('due')}` : isCredit ? `🟢 ${t('advance')}` : `✅ ${t('settled')}`}
                 </span>
               </div>
+
+              {/* Paid / Not Paid Action Buttons */}
+              {isDue && (
+                <div
+                  style={{
+                    marginTop: '1.25rem',
+                    paddingTop: '1rem',
+                    borderTop: '1px dashed #cbd5e1',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    flexWrap: 'wrap',
+                    gap: '0.75rem'
+                  }}
+                >
+                  <div>
+                    <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#334155' }}>
+                      {t('prevMonthSettlementQuestion')}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', gap: '0.65rem' }}>
+                    <button
+                      type="button"
+                      className="btn-secondary"
+                      style={{ padding: '0.5rem 0.95rem', borderRadius: '10px', fontSize: '0.85rem', fontWeight: 700 }}
+                      onClick={() => toast.info(t('carriedForwardNote'))}
+                    >
+                      {t('notPaidBtn')}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-primary-big"
+                      style={{
+                        width: 'auto',
+                        minHeight: '42px',
+                        padding: '0.5rem 1.25rem',
+                        fontSize: '0.9rem',
+                        background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
+                        borderColor: '#059669',
+                        boxShadow: '0 4px 12px rgba(5,150,105,0.25)'
+                      }}
+                      onClick={() => setIsSettlementModalOpen(true)}
+                    >
+                      <CheckCircle2 size={17} />
+                      <span>{t('paidBtn')}</span>
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Admin Freeze Action */}
@@ -246,6 +311,27 @@ export const MonthlySettlementPage: React.FC = () => {
         onClose={() => setIsExportOpen(false)}
         yearMonth={selectedMonth}
       />
+
+      {/* Settlement Payment Modal (Cash / UPI) */}
+      <SettlementPaymentModal
+        isOpen={isSettlementModalOpen}
+        onClose={() => setIsSettlementModalOpen(false)}
+        onSuccess={() => {
+          fetchSettlementData(true);
+          notifyDataChanged();
+        }}
+        month={selectedMonth}
+        dueAmountPaise={Math.abs(netDueOrCredit)}
+      />
+
+      {/* Month Detailed History Modal */}
+      {isDetailModalOpen && (
+        <MonthSettlementDetailModal
+          isOpen={isDetailModalOpen}
+          onClose={() => setIsDetailModalOpen(false)}
+          month={selectedMonth}
+        />
+      )}
     </div>
   );
 };

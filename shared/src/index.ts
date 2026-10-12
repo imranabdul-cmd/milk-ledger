@@ -83,6 +83,8 @@ export interface Payment {
   createdAt: string;
   updatedAt: string;
   allocations?: PaymentAllocation[];
+  isSettlement?: boolean;
+  settlementMonth?: string;
 }
 
 export interface PaymentAllocation {
@@ -111,6 +113,20 @@ export interface MonthlyClosure {
   createdAt: string;
 }
 
+export interface PreviousMonthSettlementStatus {
+  previousMonth: string; // YYYY-MM
+  closingBalancePaise: number;
+  isSettled: boolean;
+  totalLitres: number;
+  totalMilkChargesPaise: number;
+  totalPaymentsPaise: number;
+  purchaseDays: number;
+  settlementPaymentId?: string;
+  settlementPaymentMethod?: PaymentMethod;
+  settledDate?: string;
+  isNewMonthActive: boolean;
+}
+
 export interface AuditLog {
   id: string;
   familyId: string;
@@ -137,6 +153,7 @@ export interface DashboardSummary {
   netDueOrAdvancePaise: number; // positive = Due, negative = Advance Credit
   todayPurchase: MilkEntry | null;
   todayPaymentStatus: 'none' | 'paid' | 'pending';
+  previousMonthSettlement?: PreviousMonthSettlementStatus | null;
   recentActivity: Array<{
     id: string;
     type: 'purchase' | 'payment';

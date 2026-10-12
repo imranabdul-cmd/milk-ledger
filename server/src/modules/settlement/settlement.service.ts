@@ -226,6 +226,43 @@ export async function getDashboardSummary(familyId: string, targetMonth?: string
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, 10);
 
+  // Previous month settlement status check
+  const prevMonth = getPreviousMonth(month);
+  let previousMonthSettlement = null;
+  try {
+    const prevSettlement = await calculateMonthSettlement(familyId, prevMonth);
+    const settlementPaymentRes = await query(
+      `SELECT p.id, p.amount_paise, p.payment_method, p.date
+       FROM payments p
+       WHERE p.family_id = $1 
+         AND (p.notes LIKE $2 OR p.notes LIKE $3)
+       ORDER BY p.date DESC
+       LIMIT 1`,
+      [familyId, `%[Settlement: ${prevMonth}]%`, `%Settlement for ${prevMonth}%`]
+    );
+
+    const hasSettlementPayment = settlementPaymentRes.rows.length > 0;
+    const isPrevSettled = hasSettlementPayment || prevSettlement.isClosed || prevSettlement.closingBalancePaise <= 0;
+
+    if (prevSettlement.totalMilkChargesPaise > 0 || prevSettlement.closingBalancePaise > 0 || hasSettlementPayment) {
+      previousMonthSettlement = {
+        previousMonth: prevMonth,
+        closingBalancePaise: prevSettlement.closingBalancePaise,
+        isSettled: isPrevSettled,
+        totalLitres: prevSettlement.totalLitres,
+        totalMilkChargesPaise: prevSettlement.totalMilkChargesPaise,
+        totalPaymentsPaise: prevSettlement.totalPaymentsPaise,
+        purchaseDays: prevSettlement.purchaseDays,
+        settlementPaymentId: settlementPaymentRes.rows[0]?.id,
+        settlementPaymentMethod: settlementPaymentRes.rows[0]?.payment_method,
+        settledDate: settlementPaymentRes.rows[0]?.date,
+        isNewMonthActive: true
+      };
+    }
+  } catch (prevErr) {
+    console.error('Failed to calculate previous month settlement prompt:', prevErr);
+  }
+
   return {
     currentMonth: month,
     currentRatePaisePerLitre: settlement.currentRatePaisePerLitre,
@@ -238,6 +275,7 @@ export async function getDashboardSummary(familyId: string, targetMonth?: string
     netDueOrAdvancePaise: settlement.closingBalancePaise, // > 0 is due, < 0 is advance
     todayPurchase,
     todayPaymentStatus,
+    previousMonthSettlement,
     recentActivity: combinedActivity
   };
 }

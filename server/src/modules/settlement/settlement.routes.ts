@@ -11,6 +11,7 @@ import {
 } from './settlement.service.js';
 import { getCurrentMonthKolkata } from '../../utils/timezone.js';
 import { Language } from '@family-milk/shared';
+import { createPayment } from '../payments/payments.service.js';
 
 const router = Router();
 
@@ -85,6 +86,47 @@ router.get('/whatsapp-text', requireAuth, async (req: Request, res: Response): P
     });
   } catch (error: any) {
     res.status(500).json({ error: error.message || 'Failed to generate WhatsApp statement' });
+  }
+});
+
+const payPreviousMonthSchema = z.object({
+  previousMonth: z.string().regex(/^\d{4}-\d{2}$/, 'previousMonth must be YYYY-MM'),
+  amountPaise: z.number().int().positive(),
+  paymentMethod: z.enum(['cash', 'upi', 'bank_transfer', 'other']).default('cash'),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'date must be YYYY-MM-DD'),
+  notes: z.string().max(500).optional(),
+  freezeMonth: z.boolean().optional().default(true)
+});
+
+// POST /api/settlement/pay-previous-month
+router.post('/pay-previous-month', requireAuth, validate({ body: payPreviousMonthSchema }), async (req: Request, res: Response): Promise<void> => {
+  const familyId = req.user!.familyId;
+  const { previousMonth, amountPaise, paymentMethod, date, notes, freezeMonth } = req.body;
+
+  try {
+    const formattedNotes = `[Settlement: ${previousMonth}] ${notes || `Settlement for ${previousMonth} via ${paymentMethod.toUpperCase()}`}`;
+
+    const payment = await createPayment({
+      familyId,
+      memberId: req.user!.id,
+      date,
+      amountPaise,
+      paymentMethod,
+      notes: formattedNotes,
+      ipAddress: req.ip
+    });
+
+    if (freezeMonth) {
+      try {
+        await closeMonthStatement(familyId, previousMonth, req.user!.id, `Settled via ${paymentMethod.toUpperCase()}`);
+      } catch (closureErr) {
+        // If already closed or non-admin, ignore error
+      }
+    }
+
+    res.status(201).json({ success: true, payment });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to record settlement payment' });
   }
 });
 

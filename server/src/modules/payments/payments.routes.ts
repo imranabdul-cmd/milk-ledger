@@ -49,7 +49,17 @@ router.get('/', requireAuth, async (req: Request, res: Response): Promise<void> 
   `;
 
   const result = await query(sql, values);
-  res.json({ payments: result.rows });
+  const payments = result.rows.map(p => {
+    const isSettlement = Boolean(p.notes && (p.notes.includes('[Settlement:') || p.notes.includes('Settlement for')));
+    const match = p.notes ? p.notes.match(/\[Settlement:\s*(\d{4}-\d{2})\]/) : null;
+    const fallbackMatch = !match && p.notes ? p.notes.match(/Settlement for\s*(\d{4}-\d{2})/) : null;
+    return {
+      ...p,
+      isSettlement,
+      settlementMonth: match ? match[1] : (fallbackMatch ? fallbackMatch[1] : undefined)
+    };
+  });
+  res.json({ payments });
 });
 
 // POST /api/payments

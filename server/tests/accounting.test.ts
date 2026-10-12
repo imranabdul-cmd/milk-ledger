@@ -15,7 +15,8 @@ import {
 } from '@family-milk/shared';
 import {
   calculateMonthSettlement,
-  generateWhatsAppStatementText
+  generateWhatsAppStatementText,
+  getDashboardSummary
 } from '../src/modules/settlement/settlement.service.js';
 import {
   createMilkEntry,
@@ -388,6 +389,64 @@ describe('Family Milk Account - Core Accounting & Integration Suite', () => {
       expect(enText).toContain('₹50');
       expect(enText).toContain('₹120');
       expect(enText).toContain('Outstanding Due');
+    });
+  });
+
+  describe('8. Previous Month Settlement & New Month Roll-over Workflow', () => {
+    it('accurately identifies previous month due and detects settlement via cash or UPI', async () => {
+      // 1. Record purchases in September 2026
+      await createMilkEntry({
+        familyId,
+        memberId: adminId,
+        date: '2026-09-10',
+        quantityMl: 1000, // 1 Litre @ ₹50 = ₹50
+        paymentStatus: 'pending'
+      });
+
+      await createMilkEntry({
+        familyId,
+        memberId: adminId,
+        date: '2026-09-15',
+        quantityMl: 1000, // 1 Litre @ ₹50 = ₹50
+        paymentStatus: 'pending'
+      });
+
+      // 2. Query Dashboard summary for October 2026 (New Month)
+      const octSummaryBefore = await getDashboardSummary(familyId, '2026-10');
+
+      // October itself starts clean with 0 new charges
+      expect(octSummaryBefore.totalMilkChargesPaise).toBe(0);
+      expect(octSummaryBefore.totalLitres).toBe(0);
+      expect(octSummaryBefore.purchaseDays).toBe(0);
+
+      // Opening balance reflects September due of ₹100 (10000 paise)
+      expect(octSummaryBefore.openingBalancePaise).toBe(10000);
+
+      // Previous month settlement prompt is active and unsettled
+      expect(octSummaryBefore.previousMonthSettlement).not.toBeNull();
+      expect(octSummaryBefore.previousMonthSettlement?.previousMonth).toBe('2026-09');
+      expect(octSummaryBefore.previousMonthSettlement?.closingBalancePaise).toBe(10000);
+      expect(octSummaryBefore.previousMonthSettlement?.isSettled).toBe(false);
+
+      // 3. User settles previous month via UPI
+      const settlementPayment = await createPayment({
+        familyId,
+        memberId: adminId,
+        date: '2026-10-01',
+        amountPaise: 10000,
+        paymentMethod: 'upi',
+        notes: '[Settlement: 2026-09] Full September Settlement via UPI'
+      });
+
+      expect(settlementPayment.amountPaise).toBe(10000);
+      expect(settlementPayment.paymentMethod).toBe('upi');
+
+      // 4. Re-query October summary: previous month settlement must now be detected as settled
+      const octSummaryAfter = await getDashboardSummary(familyId, '2026-10');
+      expect(octSummaryAfter.previousMonthSettlement).not.toBeNull();
+      expect(octSummaryAfter.previousMonthSettlement?.isSettled).toBe(true);
+      expect(octSummaryAfter.previousMonthSettlement?.settlementPaymentMethod).toBe('upi');
+      expect(octSummaryAfter.previousMonthSettlement?.settlementPaymentId).toBe(settlementPayment.id);
     });
   });
 });

@@ -27,8 +27,10 @@ import {
   Check
 } from 'lucide-react';
 import { ExportBillModal } from '../components/ExportBillModal';
+import { SettlementPaymentModal } from '../components/SettlementPaymentModal';
 import { CorrectionModal } from '../components/CorrectionModal';
 import { DateTimeBadge } from '../components/DateTimeBadge';
+import { formatDisplayMonthYear } from '../utils/dateFormatter';
 import { useAutoSync, notifyDataChanged } from '../hooks/useAutoSync';
 import { useToast } from '../context/ToastContext';
 
@@ -49,6 +51,9 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
   const [todayEntries, setTodayEntries] = useState<MilkEntry[]>([]);
   const [recentEntries, setRecentEntries] = useState<MilkEntry[]>([]);
   const [closingBalancePaise, setClosingBalancePaise] = useState<number>(0);
+  const [prevSettlement, setPrevSettlement] = useState<any>(null);
+  const [isSettlementModalOpen, setIsSettlementModalOpen] = useState<boolean>(false);
+  const [dismissedSettlementPrompt, setDismissedSettlementPrompt] = useState<boolean>(false);
 
   // Purchase Flow State
   // Step 1: select_quantity -> Step 2: choose_payment -> Step 3: success
@@ -121,6 +126,7 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
 
       if (summaryRes.summary) {
         setClosingBalancePaise(summaryRes.summary.closingBalancePaise || 0);
+        setPrevSettlement(summaryRes.summary.previousMonthSettlement || null);
       }
     } catch (err) {
       console.error('Failed to load member screen data:', err);
@@ -862,6 +868,67 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
             )}
           </div>
 
+          {/* PREVIOUS MONTH SETTLEMENT BANNER FOR MEMBER */}
+          {prevSettlement && !prevSettlement.isSettled && prevSettlement.closingBalancePaise > 0 && !dismissedSettlementPrompt && (
+            <div
+              style={{
+                background: 'linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%)',
+                border: '2px solid #86efac',
+                borderRadius: '20px',
+                padding: '1.1rem 1.25rem',
+                marginBottom: '1.25rem',
+                boxShadow: '0 4px 16px rgba(5,150,105,0.12)'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '0.35rem' }}>
+                <span style={{ fontSize: '0.68rem', fontWeight: 800, background: '#dcfce7', color: '#166534', padding: '0.15rem 0.5rem', borderRadius: '999px', textTransform: 'uppercase' }}>
+                  🌟 {t('prevMonthSettlementTitle')}
+                </span>
+                <span style={{ fontSize: '0.76rem', color: '#047857', fontWeight: 700 }}>
+                  {formatDisplayMonthYear(prevSettlement.previousMonth, language)}
+                </span>
+              </div>
+              <div style={{ fontSize: '1rem', fontWeight: 800, color: '#0f172a', marginBottom: '0.2rem' }}>
+                {t('prevMonthSettlementQuestion')}
+              </div>
+              <div style={{ fontSize: '0.82rem', color: '#475569', marginBottom: '0.85rem' }}>
+                {t('totalSettledAmount')}: <strong style={{ color: '#047857' }}>{formatPaise(prevSettlement.closingBalancePaise)}</strong>
+              </div>
+
+              <div style={{ display: 'flex', gap: '0.6rem' }}>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  style={{ flex: 1, padding: '0.55rem', borderRadius: '12px', fontSize: '0.85rem', fontWeight: 700 }}
+                  onClick={() => {
+                    setDismissedSettlementPrompt(true);
+                    toast.info(t('carriedForwardNote'));
+                  }}
+                >
+                  {t('notPaidBtn')}
+                </button>
+                <button
+                  type="button"
+                  className="btn-primary-big"
+                  style={{
+                    flex: 1.5,
+                    minHeight: '44px',
+                    padding: '0.55rem',
+                    borderRadius: '12px',
+                    fontSize: '0.9rem',
+                    background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
+                    borderColor: '#059669',
+                    boxShadow: '0 4px 12px rgba(5,150,105,0.25)'
+                  }}
+                  onClick={() => setIsSettlementModalOpen(true)}
+                >
+                  <CheckCircle2 size={16} />
+                  <span>{t('paidBtn')}</span>
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* FAMILY BALANCE OVERVIEW CARD */}
           <div
             className="simple-sub-card"
@@ -1496,6 +1563,20 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
         }}
         entry={editingEntry}
       />
+
+      {/* Settlement Payment Modal (Cash / UPI) */}
+      {prevSettlement && (
+        <SettlementPaymentModal
+          isOpen={isSettlementModalOpen}
+          onClose={() => setIsSettlementModalOpen(false)}
+          onSuccess={() => {
+            fetchData();
+            notifyDataChanged();
+          }}
+          month={prevSettlement.previousMonth}
+          dueAmountPaise={prevSettlement.closingBalancePaise}
+        />
+      )}
       </div>
     </div>
   );

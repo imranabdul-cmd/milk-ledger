@@ -5,6 +5,7 @@ import { apiRequest } from '../api/client';
 import { DashboardSummary, MilkEntry, formatPaise, formatMilkQuantity } from '@family-milk/shared';
 import { QuickPurchaseModal } from '../components/QuickPurchaseModal';
 import { PaymentModal } from '../components/PaymentModal';
+import { SettlementPaymentModal } from '../components/SettlementPaymentModal';
 import { ExportBillModal } from '../components/ExportBillModal';
 import { UpdateRateModal } from '../components/UpdateRateModal';
 import { CorrectionModal, EditableMilkRecord } from '../components/CorrectionModal';
@@ -59,6 +60,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToTab })
   const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState<boolean>(false);
   const [quickModalQuantity, setQuickModalQuantity] = useState<number>(500);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState<boolean>(false);
+  const [isSettlementModalOpen, setIsSettlementModalOpen] = useState<boolean>(false);
+  const [dismissedSettlementPrompt, setDismissedSettlementPrompt] = useState<boolean>(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState<boolean>(false);
   const [isUpdateRateModalOpen, setIsUpdateRateModalOpen] = useState<boolean>(false);
   const [editingRecord, setEditingRecord] = useState<EditableMilkRecord | null>(null);
@@ -302,6 +305,106 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToTab })
             </button>
           </div>
         </div>
+
+        {/* ====================================================
+            1.5 PREVIOUS MONTH SETTLEMENT PROMPT (1st of month / unsettled)
+            ==================================================== */}
+        {summary?.previousMonthSettlement &&
+          !summary.previousMonthSettlement.isSettled &&
+          summary.previousMonthSettlement.closingBalancePaise > 0 &&
+          !dismissedSettlementPrompt && (
+            <div
+              className="prev-month-settlement-card"
+              style={{
+                background: 'linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%)',
+                border: '2px solid #86efac',
+                borderRadius: '22px',
+                padding: '1.25rem 1.5rem',
+                marginBottom: '1.5rem',
+                boxShadow: '0 8px 24px rgba(5, 150, 105, 0.12)',
+                display: 'flex',
+                flexWrap: 'wrap',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '1rem'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <div
+                  style={{
+                    width: '52px',
+                    height: '52px',
+                    borderRadius: '16px',
+                    background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
+                    color: 'white',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: '0 4px 14px rgba(5, 150, 105, 0.35)',
+                    flexShrink: 0
+                  }}
+                >
+                  <Wallet size={26} />
+                </div>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.2rem' }}>
+                    <span style={{ fontSize: '0.7rem', fontWeight: 800, background: '#dcfce7', color: '#166534', padding: '0.15rem 0.55rem', borderRadius: '999px', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+                      🌟 {t('prevMonthSettlementTitle')}
+                    </span>
+                    <span style={{ fontSize: '0.78rem', color: '#047857', fontWeight: 700 }}>
+                      {formatDisplayMonthYear(summary.previousMonthSettlement.previousMonth, language)}
+                    </span>
+                  </div>
+                  <h3 style={{ fontSize: '1.15rem', fontWeight: 900, color: '#0f172a', margin: '0.1rem 0 0.25rem' }}>
+                    {t('prevMonthSettlementQuestion')}
+                  </h3>
+                  <p style={{ fontSize: '0.84rem', color: '#475569', margin: 0 }}>
+                    {t('totalSettledAmount')}: <strong style={{ color: '#047857', fontSize: '1.05rem' }}>{formatPaise(summary.previousMonthSettlement.closingBalancePaise)}</strong> ({summary.previousMonthSettlement.totalLitres} L • {summary.previousMonthSettlement.purchaseDays} {t('days')})
+                  </p>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  style={{
+                    padding: '0.6rem 1rem',
+                    borderRadius: '12px',
+                    fontSize: '0.88rem',
+                    fontWeight: 700,
+                    borderColor: '#cbd5e1',
+                    color: '#64748b'
+                  }}
+                  onClick={() => {
+                    setDismissedSettlementPrompt(true);
+                    toast.info(t('carriedForwardNote'));
+                  }}
+                >
+                  {t('notPaidBtn')}
+                </button>
+
+                <button
+                  type="button"
+                  className="btn-primary-big"
+                  style={{
+                    width: 'auto',
+                    minHeight: '44px',
+                    padding: '0.65rem 1.35rem',
+                    borderRadius: '12px',
+                    fontSize: '0.95rem',
+                    background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
+                    borderColor: '#059669',
+                    boxShadow: '0 4px 14px rgba(5, 150, 105, 0.3)'
+                  }}
+                  onClick={() => setIsSettlementModalOpen(true)}
+                >
+                  <CheckCircle2 size={18} />
+                  <span>{t('paidBtn')}</span>
+                </button>
+              </div>
+            </div>
+          )}
 
         {/* ====================================================
             2. FINANCIAL KPI ROW (5 CARDS)
@@ -1031,6 +1134,20 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToTab })
         }}
         entry={editingRecord}
       />
+
+      {/* PREVIOUS MONTH SETTLEMENT PAYMENT MODAL */}
+      {summary?.previousMonthSettlement && (
+        <SettlementPaymentModal
+          isOpen={isSettlementModalOpen}
+          onClose={() => setIsSettlementModalOpen(false)}
+          onSuccess={() => {
+            fetchSummary(true);
+            notifyDataChanged();
+          }}
+          month={summary.previousMonthSettlement.previousMonth}
+          dueAmountPaise={summary.previousMonthSettlement.closingBalancePaise}
+        />
+      )}
     </div>
   );
 };
