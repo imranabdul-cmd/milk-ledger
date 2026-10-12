@@ -61,8 +61,8 @@ export const PaymentsPage: React.FC = () => {
         </button>
       </div>
 
-      {/* Filter Bar */}
-      <div style={{ background: 'white', borderRadius: 'var(--radius-md)', padding: '0.85rem 1rem', marginBottom: '1.25rem', display: 'flex', gap: '0.75rem', alignItems: 'center', border: '1px solid var(--slate-200)' }}>
+      {/* Filter Bar with Frosted Glassmorphism */}
+      <div className="filter-glass-bar">
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#64748b', fontSize: '0.85rem', fontWeight: 700 }}>
           <Filter size={16} />
           <span>{t('month')}:</span>
