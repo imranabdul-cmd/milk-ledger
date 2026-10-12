@@ -59,7 +59,7 @@ export const QuickPurchaseModal: React.FC<QuickPurchaseModalProps> = ({
     e.preventDefault();
     setError(null);
 
-    if (quantityMl <= 0) {
+    if (quantityMl < 0) {
       setError(t('invalidNumber'));
       return;
     }
@@ -68,18 +68,24 @@ export const QuickPurchaseModal: React.FC<QuickPurchaseModalProps> = ({
     const idempotencyKey = `entry-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 
     try {
+      const defaultNotes = quantityMl === 0
+        ? (language === 'ta' ? 'பால் வாங்கவில்லை (No Milk)' : language === 'ml' ? 'പാൽ വാങ്ങിയില്ല (No Milk)' : 'No Milk Delivered')
+        : undefined;
+
       await apiRequest('/api/milk/entries', {
         method: 'POST',
         body: JSON.stringify({
           date,
           quantityMl,
           paymentChoice,
-          notes: notes.trim() || undefined,
+          notes: notes.trim() || defaultNotes,
           idempotencyKey,
         }),
       });
 
-      const qtyText = quantityMl === 500
+      const qtyText = quantityMl === 0
+        ? (language === 'ta' ? 'இன்று பால் வாங்கவில்லை (0 L) என பதிவானது' : language === 'ml' ? 'ഇന്ന് പാൽ വാങ്ങിയില്ല (0 L) എന്ന് രേഖപ്പെടുത്തി' : 'No Milk Recorded (0 L)')
+        : quantityMl === 500
         ? (language === 'ta' ? '½ லிட்டர் பால் பதிவானது' : language === 'ml' ? '½ ലിറ്റർ പാൽ രേഖപ്പെടുത്തി' : '½ Litre Milk Recorded')
         : quantityMl === 1000
         ? (language === 'ta' ? '1 லிட்டர் பால் பதிவானது' : language === 'ml' ? '1 ലിറ്റർ പാൽ രേഖപ്പെടുത്തി' : '1 Litre Milk Recorded')
@@ -132,7 +138,7 @@ export const QuickPurchaseModal: React.FC<QuickPurchaseModalProps> = ({
           {/* Quick Quantity Presets */}
           <div className="form-group">
             <label className="form-label">{t('quantity')}</label>
-            <div className="quick-grid">
+            <div className="quick-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
               <button
                 type="button"
                 className={`quick-tap-btn ${quantityMl === 500 && !isCustomMode ? 'selected-paid' : ''}`}
@@ -155,6 +161,16 @@ export const QuickPurchaseModal: React.FC<QuickPurchaseModalProps> = ({
 
               <button
                 type="button"
+                className={`quick-tap-btn ${quantityMl === 0 && !isCustomMode ? 'selected-paid' : ''}`}
+                style={{ borderColor: quantityMl === 0 && !isCustomMode ? '#ef4444' : undefined, background: quantityMl === 0 && !isCustomMode ? '#fef2f2' : undefined }}
+                onClick={() => handleSelectPreset(0)}
+              >
+                <span className="quick-qty-val" style={{ color: '#dc2626' }}>🚫 0 L</span>
+                <span className="quick-qty-sub" style={{ color: '#b91c1c' }}>{t('noMilkBadge')}</span>
+              </button>
+
+              <button
+                type="button"
                 className={`quick-tap-btn custom-btn ${isCustomMode ? 'selected-paid' : ''}`}
                 style={{ borderColor: isCustomMode ? '#2563eb' : undefined }}
                 onClick={() => setIsCustomMode(true)}
@@ -169,10 +185,10 @@ export const QuickPurchaseModal: React.FC<QuickPurchaseModalProps> = ({
                 <input
                   type="number"
                   step="50"
-                  min="50"
+                  min="0"
                   max="50000"
                   className="form-input"
-                  placeholder="e.g. 750 (for 750 ml) or 1500 (for 1.5 L)"
+                  placeholder="e.g. 750 (for 750 ml) or 1500 (for 1.5 L) or 0 (No Milk)"
                   value={customMlInput}
                   onChange={handleCustomMlChange}
                   autoFocus

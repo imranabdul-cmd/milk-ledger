@@ -645,6 +645,7 @@ export const ExportBillModal: React.FC<ExportBillModalProps> = ({
                           .slice()
                           .sort((a, b) => a.date.localeCompare(b.date))
                           .map((entry, idx) => {
+                            const isNoMilk = entry.quantityMl === 0;
                             const isPaid = entry.paymentStatus === 'paid';
                             const displayDate = formatKolkataDate(entry.date);
                             return (
@@ -652,26 +653,44 @@ export const ExportBillModal: React.FC<ExportBillModalProps> = ({
                                 key={entry.id}
                                 style={{
                                   borderBottom: '1px solid #e2e8f0',
-                                  background: isPaid ? 'rgba(240, 253, 244, 0.45)' : 'rgba(254, 242, 242, 0.55)'
+                                  background: isNoMilk ? '#f8fafc' : isPaid ? 'rgba(240, 253, 244, 0.45)' : 'rgba(254, 242, 242, 0.55)'
                                 }}
                               >
                                 <td style={{ padding: '0.5rem 0.65rem', color: '#64748b' }}>
                                   {idx + 1}
                                 </td>
-                                <td style={{ padding: '0.5rem 0.65rem', fontWeight: 700, color: '#0f172a' }}>
+                                <td style={{ padding: '0.5rem 0.65rem', fontWeight: 700, color: isNoMilk ? '#dc2626' : '#0f172a' }}>
                                   {displayDate}
                                 </td>
-                                <td style={{ padding: '0.5rem 0.65rem', fontWeight: 600 }}>
-                                  {(entry.quantityMl / 1000).toFixed(2)} L
+                                <td style={{ padding: '0.5rem 0.65rem', fontWeight: 700, color: isNoMilk ? '#dc2626' : undefined }}>
+                                  {isNoMilk
+                                    ? (language === 'ta' ? '0 L (வாங்கவில்லை)' : language === 'ml' ? '0 L (വാങ്ങിയില്ല)' : '0 L (No Milk)')
+                                    : `${(entry.quantityMl / 1000).toFixed(2)} L`}
                                 </td>
                                 <td style={{ padding: '0.5rem 0.65rem', color: '#475569' }}>
-                                  {formatPaise(entry.ratePaisePerLitre)}
+                                  {isNoMilk ? '₹0.00' : formatPaise(entry.ratePaisePerLitre)}
                                 </td>
-                                <td style={{ padding: '0.5rem 0.65rem', fontWeight: 800 }}>
+                                <td style={{ padding: '0.5rem 0.65rem', fontWeight: 800, color: isNoMilk ? '#64748b' : undefined }}>
                                   {formatPaise(entry.totalAmountPaise)}
                                 </td>
                                 <td style={{ padding: '0.5rem 0.65rem' }}>
-                                  {isPaid ? (
+                                  {isNoMilk ? (
+                                    <span
+                                      style={{
+                                        background: '#f1f5f9',
+                                        color: '#64748b',
+                                        padding: '0.2rem 0.55rem',
+                                        borderRadius: '6px',
+                                        fontSize: '0.75rem',
+                                        fontWeight: 800,
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '3px'
+                                      }}
+                                    >
+                                      🚫 {t('noMilkBadge')}
+                                    </span>
+                                  ) : isPaid ? (
                                     <span
                                       style={{
                                         background: '#dcfce7',

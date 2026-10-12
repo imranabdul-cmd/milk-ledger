@@ -48,6 +48,10 @@ export const translations = {
     chooseQuantity: 'Choose Quantity',
     recordMilkNow: 'Record Milk Purchase',
     recordPaymentNow: 'Record Payment',
+    noMilkDelivered: 'No Milk Today (0 L)',
+    noMilkDeliveredSub: '0 L • Not taken today',
+    noMilkBadge: 'No Milk Taken (0 L)',
+    confirmNoMilkPrompt: 'Record today as No Milk Delivered (0 L)?',
 
     // Statuses & Choices
     paid: 'Paid',
@@ -292,6 +296,10 @@ export const translations = {
     chooseQuantity: 'அளவைத் தேர்ந்தெடுக்கவும்',
     recordMilkNow: 'பால் வாங்கியதை பதிவு செய்',
     recordPaymentNow: 'பணம் கொடுத்ததை பதிவு செய்',
+    noMilkDelivered: 'இன்று பால் வாங்கவில்லை (0 L)',
+    noMilkDeliveredSub: '0 லி • இன்று பால் எடுக்கவில்லை',
+    noMilkBadge: 'பால் வாங்கவில்லை (0 L)',
+    confirmNoMilkPrompt: 'இன்று பால் வாங்கவில்லை (0 L) என பதிவு செய்யவா?',
 
     // Statuses & Choices
     paid: 'பணம் கொடுத்தாச்சு (Paid)',
@@ -536,6 +544,10 @@ export const translations = {
     chooseQuantity: 'അളവ് തിരഞ്ഞെടുക്കുക',
     recordMilkNow: 'പാല് വാങ്ങിയത് രേഖപ്പെടുത്തുക',
     recordPaymentNow: 'പണം നൽകിയത് രേഖപ്പെടുത്തുക',
+    noMilkDelivered: 'ഇന്ന് പാൽ വാങ്ങിയില്ല (0 L)',
+    noMilkDeliveredSub: '0 ലി • ഇന്ന് പാൽ എടുത്തിട്ടില്ല',
+    noMilkBadge: 'പാൽ വാങ്ങിയില്ല (0 L)',
+    confirmNoMilkPrompt: 'ഇന്ന് പാൽ വാങ്ങിയില്ല (0 L) എന്ന് രേഖപ്പെടുത്തണോ?',
 
     // Statuses & Choices
     paid: 'പണം നൽകി',

@@ -225,6 +225,11 @@ export function formatPaise(paise: number, options?: { showDecimalIfZero?: boole
  * Formats quantity in millilitres into human-readable string (e.g. "½ L", "1 L", "1.5 L")
  */
 export function formatMilkQuantity(quantityMl: number, lang: Language = 'en'): string {
+  if (quantityMl === 0) {
+    if (lang === 'ta') return 'பால் வாங்கவில்லை (0 L)';
+    if (lang === 'ml') return 'പാൽ വാങ്ങിയില്ല (0 L)';
+    return 'No Milk (0 L)';
+  }
   if (quantityMl === 500) {
     if (lang === 'ta') return '½ லிட்டர்';
     if (lang === 'ml') return '½ ലിറ്റർ';

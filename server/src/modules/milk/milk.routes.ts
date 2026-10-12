@@ -13,7 +13,7 @@ const router = Router();
 
 const createEntrySchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be YYYY-MM-DD'),
-  quantityMl: z.number().int().min(50).max(50000),
+  quantityMl: z.number().int().min(0).max(50000),
   paymentChoice: z.enum(['paid', 'pending']),
   notes: z.string().max(500).optional(),
   idempotencyKey: z.string().max(100).optional()
@@ -21,7 +21,7 @@ const createEntrySchema = z.object({
 
 const correctEntrySchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be YYYY-MM-DD').optional(),
-  quantityMl: z.number().int().min(50).max(50000).optional(),
+  quantityMl: z.number().int().min(0).max(50000).optional(),
   totalAmountRupees: z.number().nonnegative().optional(),
   totalAmountPaise: z.number().int().nonnegative().optional(),
   paymentStatus: z.enum(['paid', 'pending', 'partially_paid']).optional(),

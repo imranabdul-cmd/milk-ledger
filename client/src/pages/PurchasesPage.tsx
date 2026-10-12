@@ -150,60 +150,79 @@ export const PurchasesPage: React.FC = () => {
         </div>
       ) : (
         <div>
-          {entries.map((entry) => (
-            <div key={entry.id} className="activity-card" style={{ padding: '1.15rem 1rem' }}>
-              <div className="activity-left">
-                <div className="activity-icon-badge badge-milk">
-                  <Droplets size={24} />
-                </div>
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <span className="activity-title">
-                      {formatMilkQuantity(entry.quantityMl, language)}
-                    </span>
-                    {entry.isCorrected && (
-                      <span style={{ fontSize: '0.7rem', background: '#fef3c7', color: '#b45309', padding: '0.15rem 0.4rem', borderRadius: '4px', fontWeight: 700 }}>
-                        {language === 'ta' ? 'திருத்தப்பட்டது' : language === 'ml' ? 'തിരുത്തിയത്' : 'Corrected'}
-                      </span>
-                    )}
+          {entries.map((entry) => {
+            const isNoMilk = entry.quantityMl === 0;
+            return (
+              <div
+                key={entry.id}
+                className="activity-card"
+                style={{
+                  padding: '1.15rem 1rem',
+                  background: isNoMilk ? 'rgba(254, 242, 242, 0.45)' : undefined,
+                  borderLeft: isNoMilk ? '4px solid #ef4444' : undefined,
+                }}
+              >
+                <div className="activity-left">
+                  <div
+                    className="activity-icon-badge badge-milk"
+                    style={isNoMilk ? { background: '#fee2e2', color: '#dc2626' } : undefined}
+                  >
+                    {isNoMilk ? <span style={{ fontSize: '1.2rem' }}>🚫</span> : <Droplets size={24} />}
                   </div>
-                  <div className="activity-meta">
-                    <DateTimeBadge date={entry.date} createdAt={entry.createdAt} />
-                    <span className="datetime-pill-date" style={{ background: '#f8fafc', color: '#475569' }}>
-                      @ {formatPaise(entry.ratePaisePerLitre)}/L
-                    </span>
-                    {entry.createdByName && (
-                      <span className="activity-user-pill">
-                        👤 {entry.createdByName}
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <span className="activity-title" style={isNoMilk ? { color: '#dc2626' } : undefined}>
+                        {formatMilkQuantity(entry.quantityMl, language)}
                       </span>
-                    )}
-                  </div>
-                  {entry.notes && (
-                    <div style={{ fontSize: '0.76rem', color: '#64748b', marginTop: '0.25rem', fontStyle: 'italic' }}>
-                      "{entry.notes}"
+                      {entry.isCorrected && (
+                        <span style={{ fontSize: '0.7rem', background: '#fef3c7', color: '#b45309', padding: '0.15rem 0.4rem', borderRadius: '4px', fontWeight: 700 }}>
+                          {language === 'ta' ? 'திருத்தப்பட்டது' : language === 'ml' ? 'തിരുത്തിയത്' : 'Corrected'}
+                        </span>
+                      )}
                     </div>
-                  )}
+                    <div className="activity-meta">
+                      <DateTimeBadge date={entry.date} createdAt={entry.createdAt} />
+                      {!isNoMilk && (
+                        <span className="datetime-pill-date" style={{ background: '#f8fafc', color: '#475569' }}>
+                          @ {formatPaise(entry.ratePaisePerLitre)}/L
+                        </span>
+                      )}
+                      {entry.createdByName && (
+                        <span className="activity-user-pill">
+                          👤 {entry.createdByName}
+                        </span>
+                      )}
+                    </div>
+                    {entry.notes && (
+                      <div style={{ fontSize: '0.76rem', color: isNoMilk ? '#b91c1c' : '#64748b', marginTop: '0.25rem', fontStyle: 'italic' }}>
+                        "{entry.notes}"
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
 
-              <div className="activity-right">
-                <div className="activity-amount" style={{ color: '#0f172a' }}>
-                  {formatPaise(entry.totalAmountPaise)}
-                </div>
+                <div className="activity-right">
+                  <div className="activity-amount" style={{ color: isNoMilk ? '#dc2626' : '#0f172a' }}>
+                    {formatPaise(entry.totalAmountPaise)}
+                  </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.35rem', marginTop: '0.25rem' }}>
-                  {entry.paymentStatus === 'paid' ? (
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.2rem', color: '#059669', fontSize: '0.75rem', fontWeight: 700 }}>
-                      <CheckCircle size={13} />
-                      {t('paid')}
-                    </span>
-                  ) : (
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.2rem', color: '#dc2626', fontSize: '0.75rem', fontWeight: 700 }}>
-                      <Clock size={13} />
-                      {t('pending')}
-                    </span>
-                  )}
-                </div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.35rem', marginTop: '0.25rem' }}>
+                    {isNoMilk ? (
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.2rem', color: '#b91c1c', fontSize: '0.75rem', fontWeight: 700 }}>
+                        🚫 {t('noMilkBadge')}
+                      </span>
+                    ) : entry.paymentStatus === 'paid' ? (
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.2rem', color: '#059669', fontSize: '0.75rem', fontWeight: 700 }}>
+                        <CheckCircle size={13} />
+                        {t('paid')}
+                      </span>
+                    ) : (
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.2rem', color: '#dc2626', fontSize: '0.75rem', fontWeight: 700 }}>
+                        <Clock size={13} />
+                        {t('pending')}
+                      </span>
+                    )}
+                  </div>
 
                 {/* Edit & Delete Action Buttons */}
                 <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'flex-end', marginTop: '0.5rem' }}>
@@ -230,7 +249,8 @@ export const PurchasesPage: React.FC = () => {
                 </div>
               </div>
             </div>
-          ))}
+          );
+        })}
         </div>
       )}
 

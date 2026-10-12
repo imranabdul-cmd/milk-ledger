@@ -262,6 +262,65 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
     }
   };
 
+  // Quick Action: Record No Milk Today (0 L)
+  const handleRecordNoMilkToday = async () => {
+    if (isSubmitting) return;
+
+    const confirmMsg = t('confirmNoMilkPrompt');
+    if (!window.confirm(confirmMsg)) return;
+
+    setIsSubmitting(true);
+    setSubmitError(null);
+
+    const idempotencyKey = `milk_nomilk_${user?.id}_${Date.now()}`;
+    const noMilkNotes = language === 'ta'
+      ? 'பால் வாங்கவில்லை (No Milk)'
+      : language === 'ml'
+      ? 'പാൽ വാങ്ങിയില്ല (No Milk)'
+      : 'No Milk Delivered';
+
+    try {
+      const res = await apiRequest<{ entry: MilkEntry }>('/api/milk/entries', {
+        method: 'POST',
+        body: JSON.stringify({
+          date: todayDateStr,
+          quantityMl: 0,
+          paymentChoice: 'paid',
+          idempotencyKey,
+          notes: noMilkNotes,
+        }),
+      });
+
+      setLastSavedEntry(res.entry);
+      setStep('success');
+
+      toast.milk(
+        language === 'ta'
+          ? 'இன்று பால் வாங்கவில்லை (0 L) என பதிவானது'
+          : language === 'ml'
+          ? 'ഇന്ന് പാൽ വാങ്ങിയില്ല (0 L) എന്ന് രേഖപ്പെടുത്തി'
+          : 'Recorded No Milk (0 L) for today'
+      );
+
+      if (language === 'ml') {
+        speakText('ഇന്ന് പാൽ വാങ്ങിയില്ല എന്ന് രേഖപ്പെടുത്തി. നന്ദി!');
+      } else if (language === 'ta') {
+        speakText('இன்று பால் வாங்கவில்லை என்று பதிவு செய்யப்பட்டது. நன்றி!');
+      } else {
+        speakText('Recorded no milk for today. Thank you!');
+      }
+
+      fetchData();
+      notifyDataChanged();
+    } catch (err: any) {
+      const errTxt = err.message || 'Failed to save entry';
+      setSubmitError(errTxt);
+      toast.error(errTxt);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   // Read Balance Aloud
   const handleReadBalance = () => {
     const rupees = Math.abs(closingBalancePaise / 100);
@@ -632,6 +691,55 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
               <Droplets size={17} color="#2563eb" />
               <span>{t('otherQuantity')} ({t('otherQuantitySub')})</span>
             </button>
+
+            {/* BUTTON 4: NO MILK TODAY (0 L) */}
+            <button
+              type="button"
+              onClick={handleRecordNoMilkToday}
+              disabled={isSubmitting}
+              style={{
+                width: '100%',
+                marginTop: '0.65rem',
+                background: 'linear-gradient(135deg, rgba(254, 242, 242, 0.95) 0%, rgba(255, 247, 237, 0.95) 100%)',
+                border: '1.5px solid #fca5a5',
+                borderRadius: '16px',
+                padding: '0.75rem 1rem',
+                fontSize: '0.92rem',
+                fontWeight: 800,
+                color: '#b91c1c',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                boxShadow: '0 2px 6px rgba(239, 68, 68, 0.08)',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', textAlign: 'left' }}>
+                <span style={{ fontSize: '1.15rem' }}>🚫</span>
+                <div>
+                  <div style={{ fontSize: '0.92rem', fontWeight: 800, color: '#991b1b', lineHeight: 1.2 }}>
+                    {t('noMilkDelivered')}
+                  </div>
+                  <div style={{ fontSize: '0.72rem', color: '#b91c1c', fontWeight: 600, marginTop: '2px' }}>
+                    {t('noMilkDeliveredSub')}
+                  </div>
+                </div>
+              </div>
+              <div
+                style={{
+                  background: '#fee2e2',
+                  color: '#991b1b',
+                  padding: '0.2rem 0.65rem',
+                  borderRadius: '9999px',
+                  fontSize: '0.85rem',
+                  fontWeight: 900,
+                  border: '1px solid #fecaca',
+                }}
+              >
+                ₹0
+              </div>
+            </button>
           </div>
 
           {/* TODAY'S RECORDED MILK STATUS CARD */}
@@ -646,93 +754,97 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
 
             {todayEntries.length > 0 ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                {todayEntries.map((entry) => (
-                  <div
-                    key={entry.id}
-                    style={{
-                      background: '#f0fdf4',
-                      border: '1.5px solid #86efac',
-                      borderRadius: '14px',
-                      padding: '0.75rem 1rem',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                    }}
-                  >
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-                      <div style={{ fontWeight: 800, color: '#166534', fontSize: '1.05rem', display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap' }}>
-                        <span>{formatMilkQuantity(entry.quantityMl, language)}</span>
-                        <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#15803d' }}>
-                          ({formatPaise(entry.totalAmountPaise)})
-                        </span>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
-                        <DateTimeBadge date={entry.date} createdAt={entry.createdAt} />
-                        {(entry.createdByName || user?.name) && (
-                          <span className="activity-user-pill" style={{ background: '#f0fdf4', borderColor: '#bbf7d0', color: '#166534' }}>
-                            👤 {entry.createdByName || user?.name}
+                {todayEntries.map((entry) => {
+                  const isNoMilk = entry.quantityMl === 0;
+                  return (
+                    <div
+                      key={entry.id}
+                      style={{
+                        background: isNoMilk ? '#fff1f2' : '#f0fdf4',
+                        border: isNoMilk ? '1.5px solid #fecaca' : '1.5px solid #86efac',
+                        borderRadius: '14px',
+                        padding: '0.75rem 1rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                      }}
+                    >
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                        <div style={{ fontWeight: 800, color: isNoMilk ? '#be123c' : '#166534', fontSize: '1.05rem', display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap' }}>
+                          {isNoMilk && <span>🚫</span>}
+                          <span>{formatMilkQuantity(entry.quantityMl, language)}</span>
+                          <span style={{ fontSize: '0.85rem', fontWeight: 600, color: isNoMilk ? '#e11d48' : '#15803d' }}>
+                            ({formatPaise(entry.totalAmountPaise)})
                           </span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+                          <DateTimeBadge date={entry.date} createdAt={entry.createdAt} />
+                          {(entry.createdByName || user?.name) && (
+                            <span className="activity-user-pill" style={{ background: isNoMilk ? '#fff1f2' : '#f0fdf4', borderColor: isNoMilk ? '#fecaca' : '#bbf7d0', color: isNoMilk ? '#991b1b' : '#166534' }}>
+                              👤 {entry.createdByName || user?.name}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexShrink: 0 }}>
+                        <div
+                          style={{
+                            background: isNoMilk ? '#f1f5f9' : entry.paymentStatus === 'paid' ? '#dcfce7' : '#fef3c7',
+                            color: isNoMilk ? '#475569' : entry.paymentStatus === 'paid' ? '#15803d' : '#b45309',
+                            padding: '0.3rem 0.65rem',
+                            borderRadius: '10px',
+                            fontSize: '0.8rem',
+                            fontWeight: 800,
+                          }}
+                        >
+                          {isNoMilk ? '🚫 ' + t('noMilkBadge') : entry.paymentStatus === 'paid' ? '✓ ' + t('paid') : '⏱ ' + t('pending')}
+                        </div>
+
+                        {isPrivileged && (
+                          <div style={{ display: 'flex', gap: '0.25rem' }}>
+                            <button
+                              type="button"
+                              onClick={() => setEditingEntry(entry)}
+                              title="Edit"
+                              style={{
+                                background: '#fff',
+                                border: '1px solid #cbd5e1',
+                                borderRadius: '8px',
+                                padding: '0.35rem',
+                                color: '#334155',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                              }}
+                            >
+                              <Edit3 size={13} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteTodayEntry(entry.id)}
+                              title="Delete"
+                              style={{
+                                background: '#fff',
+                                border: '1px solid #fecaca',
+                                borderRadius: '8px',
+                                padding: '0.35rem',
+                                color: '#dc2626',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                              }}
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
                         )}
                       </div>
                     </div>
-
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexShrink: 0 }}>
-                      <div
-                        style={{
-                          background: entry.paymentStatus === 'paid' ? '#dcfce7' : '#fef3c7',
-                          color: entry.paymentStatus === 'paid' ? '#15803d' : '#b45309',
-                          padding: '0.3rem 0.65rem',
-                          borderRadius: '10px',
-                          fontSize: '0.8rem',
-                          fontWeight: 800,
-                        }}
-                      >
-                        {entry.paymentStatus === 'paid' ? '✓ ' + t('paid') : '⏱ ' + t('pending')}
-                      </div>
-
-                      {isPrivileged && (
-                        <div style={{ display: 'flex', gap: '0.25rem' }}>
-                          <button
-                            type="button"
-                            onClick={() => setEditingEntry(entry)}
-                            title="Edit"
-                            style={{
-                              background: '#fff',
-                              border: '1px solid #cbd5e1',
-                              borderRadius: '8px',
-                              padding: '0.35rem',
-                              color: '#334155',
-                              cursor: 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                            }}
-                          >
-                            <Edit3 size={13} />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteTodayEntry(entry.id)}
-                            title="Delete"
-                            style={{
-                              background: '#fff',
-                              border: '1px solid #fecaca',
-                              borderRadius: '8px',
-                              padding: '0.35rem',
-                              color: '#dc2626',
-                              cursor: 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                            }}
-                          >
-                            <Trash2 size={13} />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <div style={{ background: '#f8fafc', padding: '0.85rem', borderRadius: '12px', textAlign: 'center', color: '#64748b', fontSize: '0.88rem' }}>
@@ -1310,46 +1422,50 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
           </h3>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            {recentEntries.map((entry) => (
-              <div
-                key={entry.id}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '0.65rem 0',
-                  borderBottom: '1px solid #f1f5f9',
-                }}
-              >
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
-                  <div style={{ fontWeight: 700, color: '#0f172a', fontSize: '0.92rem', display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap' }}>
-                    <span>{formatMilkQuantity(entry.quantityMl, language)}</span>
-                    <span style={{ color: '#2563eb', fontWeight: 700 }}>• {formatPaise(entry.totalAmountPaise)}</span>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
-                    <DateTimeBadge date={entry.date} createdAt={entry.createdAt} />
-                    {entry.createdByName && (
-                      <span className="activity-user-pill">
-                        👤 {entry.createdByName}
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                <span
+            {recentEntries.map((entry) => {
+              const isNoMilk = entry.quantityMl === 0;
+              return (
+                <div
+                  key={entry.id}
                   style={{
-                    fontSize: '0.75rem',
-                    fontWeight: 700,
-                    padding: '0.2rem 0.55rem',
-                    borderRadius: '8px',
-                    background: entry.paymentStatus === 'paid' ? '#ecfdf5' : '#fffbeb',
-                    color: entry.paymentStatus === 'paid' ? '#059669' : '#d97706',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '0.65rem 0',
+                    borderBottom: '1px solid #f1f5f9',
                   }}
                 >
-                  {entry.paymentStatus === 'paid' ? t('paid') : t('pending')}
-                </span>
-              </div>
-            ))}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                    <div style={{ fontWeight: 700, color: isNoMilk ? '#be123c' : '#0f172a', fontSize: '0.92rem', display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap' }}>
+                      {isNoMilk && <span>🚫</span>}
+                      <span>{formatMilkQuantity(entry.quantityMl, language)}</span>
+                      <span style={{ color: isNoMilk ? '#e11d48' : '#2563eb', fontWeight: 700 }}>• {formatPaise(entry.totalAmountPaise)}</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+                      <DateTimeBadge date={entry.date} createdAt={entry.createdAt} />
+                      {entry.createdByName && (
+                        <span className="activity-user-pill">
+                          👤 {entry.createdByName}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <span
+                    style={{
+                      fontSize: '0.75rem',
+                      fontWeight: 700,
+                      padding: '0.2rem 0.55rem',
+                      borderRadius: '8px',
+                      background: isNoMilk ? '#f1f5f9' : entry.paymentStatus === 'paid' ? '#ecfdf5' : '#fffbeb',
+                      color: isNoMilk ? '#475569' : entry.paymentStatus === 'paid' ? '#059669' : '#d97706',
+                    }}
+                  >
+                    {isNoMilk ? t('noMilkBadge') : entry.paymentStatus === 'paid' ? t('paid') : t('pending')}
+                  </span>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}

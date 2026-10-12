@@ -320,13 +320,16 @@ export async function generateMilkBillWorkbook(data: MilkBillExportData): Promis
     const row = sheet.getRow(currentR);
     row.height = 22;
 
+    const isNoMilk = entry.quantityMl === 0;
     const formattedDate = formatKolkataDate(entry.date);
-    const qtyL = `${(entry.quantityMl / 1000).toFixed(2)} L`;
-    const rate = `₹${(entry.ratePaisePerLitre / 100).toFixed(2)}`;
+    const qtyL = isNoMilk
+      ? (lang === 'ta' ? '0 L (வாங்கவில்லை)' : lang === 'ml' ? '0 L (വാങ്ങിയില്ല)' : '0 L (No Milk)')
+      : `${(entry.quantityMl / 1000).toFixed(2)} L`;
+    const rate = isNoMilk ? '₹0.00' : `₹${(entry.ratePaisePerLitre / 100).toFixed(2)}`;
     const amount = `₹${(entry.totalAmountPaise / 100).toFixed(2)}`;
 
     const isPaid = entry.paymentStatus === 'paid';
-    const rowBg = isPaid ? 'FFF0FDF4' : 'FFFEF2F2';
+    const rowBg = isNoMilk ? 'FFF8FAFC' : isPaid ? 'FFF0FDF4' : 'FFFEF2F2';
 
     // Cell values
     sheet.getCell(`A${currentR}`).value = idx + 1;
@@ -335,11 +338,11 @@ export async function generateMilkBillWorkbook(data: MilkBillExportData): Promis
 
     sheet.getCell(`B${currentR}`).value = formattedDate;
     sheet.getCell(`B${currentR}`).alignment = { vertical: 'middle', horizontal: 'center' };
-    sheet.getCell(`B${currentR}`).font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FF0F172A' } };
+    sheet.getCell(`B${currentR}`).font = { name: 'Segoe UI', size: 10, bold: true, color: isNoMilk ? { argb: 'FFDC2626' } : { argb: 'FF0F172A' } };
 
     sheet.getCell(`C${currentR}`).value = qtyL;
     sheet.getCell(`C${currentR}`).alignment = { vertical: 'middle', horizontal: 'right' };
-    sheet.getCell(`C${currentR}`).font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FF0F172A' } };
+    sheet.getCell(`C${currentR}`).font = { name: 'Segoe UI', size: 10, bold: true, color: isNoMilk ? { argb: 'FFDC2626' } : { argb: 'FF0F172A' } };
 
     sheet.getCell(`D${currentR}`).value = rate;
     sheet.getCell(`D${currentR}`).alignment = { vertical: 'middle', horizontal: 'right' };
@@ -347,14 +350,25 @@ export async function generateMilkBillWorkbook(data: MilkBillExportData): Promis
 
     sheet.getCell(`E${currentR}`).value = amount;
     sheet.getCell(`E${currentR}`).alignment = { vertical: 'middle', horizontal: 'right' };
-    sheet.getCell(`E${currentR}`).font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FF0F172A' } };
+    sheet.getCell(`E${currentR}`).font = { name: 'Segoe UI', size: 10, bold: true, color: isNoMilk ? { argb: 'FF64748B' } : { argb: 'FF0F172A' } };
 
     // Status chip badge
     let statusLabel = '⏳ Pay Later (பாக்கி)';
-    if (isPaid) {
+    let statusTextColor = 'FFB91C1C';
+    let statusBgColor = 'FFFEE2E2';
+
+    if (isNoMilk) {
+      statusLabel = lang === 'ta' ? '🚫 வாங்கவில்லை (Skipped)' : lang === 'ml' ? '🚫 വാങ്ങിയില്ല (Skipped)' : '🚫 No Milk (Skipped)';
+      statusTextColor = 'FF64748B';
+      statusBgColor = 'FFF1F5F9';
+    } else if (isPaid) {
       statusLabel = '✓ Paid (செலுத்தியது)';
+      statusTextColor = 'FF15803D';
+      statusBgColor = 'FFDCFCE7';
     } else if (entry.paymentStatus === 'partially_paid') {
       statusLabel = 'Partial (பகுதி)';
+      statusTextColor = 'FFB45309';
+      statusBgColor = 'FFFEF3C7';
     }
 
     const statusCell = sheet.getCell(`F${currentR}`);
@@ -364,18 +378,21 @@ export async function generateMilkBillWorkbook(data: MilkBillExportData): Promis
       name: 'Segoe UI',
       size: 9.5,
       bold: true,
-      color: { argb: isPaid ? 'FF15803D' : 'FFB91C1C' }
+      color: { argb: statusTextColor }
     };
     statusCell.fill = {
       type: 'pattern',
       pattern: 'solid',
-      fgColor: { argb: isPaid ? 'FFDCFCE7' : 'FFFEE2E2' }
+      fgColor: { argb: statusBgColor }
     };
 
     // Notes
     sheet.mergeCells(`G${currentR}:H${currentR}`);
     const noteCell = sheet.getCell(`G${currentR}`);
-    noteCell.value = entry.notes || (entry.isCorrected ? 'Corrected' : '-');
+    const defaultNote = isNoMilk
+      ? (lang === 'ta' ? 'பால் வாங்கவில்லை' : lang === 'ml' ? 'പാൽ വാങ്ങിയില്ല' : 'No Milk Taken')
+      : (entry.isCorrected ? 'Corrected' : '-');
+    noteCell.value = entry.notes || defaultNote;
     noteCell.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 };
     noteCell.font = { name: 'Segoe UI', size: 9.5, color: { argb: 'FF475569' } };
 

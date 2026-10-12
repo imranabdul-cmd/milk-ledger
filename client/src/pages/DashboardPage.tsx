@@ -136,7 +136,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToTab })
     }
 
     const confirmMsg = act.type === 'purchase'
-      ? (language === 'ta' ? `இந்த பால் பதிவை நீக்க விரும்புகிறீர்களா? (${act.title || formatMilkQuantity(act.quantityMl || 500, language)})` : language === 'ml' ? `ഈ രേഖ ഒഴിവാക്കണോ?` : `Delete this milk entry?`)
+      ? (language === 'ta' ? `இந்த பால் பதிவை நீக்க விரும்புகிறீர்களா? (${act.title || formatMilkQuantity(act.quantityMl ?? 500, language)})` : language === 'ml' ? `ഈ രേഖ ഒഴിവാക്കണോ?` : `Delete this milk entry?`)
       : (language === 'ta' ? `இந்த பணப் பதிவை நீக்க விரும்புகிறீர்களா? (${formatPaise(act.amountPaise)})` : language === 'ml' ? `ഈ രേഖ ഒഴിവാക്കണോ?` : `Delete this payment?`);
 
     if (!window.confirm(confirmMsg)) return;
@@ -459,6 +459,23 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToTab })
                 <span className="qty-sub">{t('oneLitreSub')}</span>
                 <span className="qty-price-pill">
                   {formatPaise(oneLitreAmountPaise)}
+                </span>
+              </button>
+
+              {/* No Milk Today (0 L) Button */}
+              <button
+                type="button"
+                className="quick-qty-card no-milk-qty-card"
+                onClick={() => handleOpenQuickAdd(0)}
+              >
+                <span className="qty-heading" style={{ color: '#dc2626' }}>
+                  🚫 0 L
+                </span>
+                <span className="qty-sub" style={{ color: '#b91c1c' }}>
+                  {t('noMilkBadge')}
+                </span>
+                <span className="qty-price-pill" style={{ background: '#fee2e2', color: '#991b1b', border: '1px solid #fecaca' }}>
+                  ₹0
                 </span>
               </button>
 
@@ -807,7 +824,13 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToTab })
                             </span>
                           </td>
                           <td className="tx-qty-cell">
-                            {isPurchase && act.quantityMl ? formatMilkQuantity(act.quantityMl, language) : '—'}
+                            {isPurchase && (act.quantityMl !== undefined && act.quantityMl !== null)
+                              ? (
+                                <span style={act.quantityMl === 0 ? { color: '#dc2626', fontWeight: 800 } : undefined}>
+                                  {formatMilkQuantity(act.quantityMl, language)}
+                                </span>
+                              )
+                              : '—'}
                           </td>
                           <td className={`tx-amount-cell ${isPurchase ? 'amt-purchase' : 'amt-payment'}`}>
                             {isPurchase ? '' : '+'}{formatPaise(act.amountPaise)}
@@ -902,8 +925,11 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToTab })
 
                       <div className="mobile-tx-bottom">
                         <div className="mobile-tx-meta">
-                          {isPurchase && act.quantityMl && (
-                            <span className="mobile-tx-qty">
+                          {isPurchase && (act.quantityMl !== undefined && act.quantityMl !== null) && (
+                            <span
+                              className="mobile-tx-qty"
+                              style={act.quantityMl === 0 ? { color: '#dc2626', background: '#fee2e2', borderColor: '#fca5a5' } : undefined}
+                            >
                               {formatMilkQuantity(act.quantityMl, language)}
                             </span>
                           )}

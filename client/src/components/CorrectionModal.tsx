@@ -30,6 +30,7 @@ interface CorrectionModalProps {
 }
 
 const QUICK_PRESETS = [
+  { ml: 0, label: '🚫 0 L', sub: 'No Milk' },
   { ml: 250, label: '¼ L', sub: '250 ml' },
   { ml: 500, label: '½ L', sub: '500 ml' },
   { ml: 1000, label: '1 L', sub: '1000 ml' },
@@ -49,7 +50,7 @@ export const CorrectionModal: React.FC<CorrectionModalProps> = ({
   const isAdmin = user?.role === 'admin' || user?.role === 'owner';
 
   // Normalize initial values
-  const initialQty = entry?.quantityMl || 500;
+  const initialQty = entry?.quantityMl ?? 500;
   const initialPaise = entry?.totalAmountPaise ?? entry?.amountPaise ?? 2400;
   const initialRupees = (initialPaise / 100).toString();
   const initialDate = entry?.date ? (entry.date.includes('T') ? entry.date.split('T')[0] : entry.date) : '';
@@ -77,7 +78,7 @@ export const CorrectionModal: React.FC<CorrectionModalProps> = ({
   // Sync state whenever entry changes
   useEffect(() => {
     if (entry) {
-      const q = entry.quantityMl || 500;
+      const q = entry.quantityMl ?? 500;
       const p = entry.totalAmountPaise ?? entry.amountPaise ?? 2400;
       const d = entry.date ? (entry.date.includes('T') ? entry.date.split('T')[0] : entry.date) : '';
       const s: PaymentStatus = (entry.paymentStatus === 'paid' || entry.status === 'paid') ? 'paid' : 'pending';
@@ -110,7 +111,7 @@ export const CorrectionModal: React.FC<CorrectionModalProps> = ({
   // Handle Quantity Change manually
   const handleQuantityChange = (val: number) => {
     setQuantityMl(val);
-    if (val > 0) {
+    if (val >= 0) {
       const newPaise = Math.round((val / 1000) * ratePaise);
       setAmountRupees((newPaise / 100).toFixed(0));
     }
@@ -277,15 +278,20 @@ export const CorrectionModal: React.FC<CorrectionModalProps> = ({
             </label>
 
             {/* Quick Presets */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '0.35rem', marginBottom: '0.5rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '0.35rem', marginBottom: '0.5rem' }}>
               {QUICK_PRESETS.map((preset) => {
-                const label = language === 'ml'
+                const label = preset.ml === 0
+                  ? '🚫 0 L'
+                  : language === 'ml'
                   ? (preset.ml === 250 ? '¼ ലി' : preset.ml === 500 ? '½ ലി' : preset.ml === 1000 ? '1 ലി' : preset.ml === 1500 ? '1½ ലി' : '2 ലി')
                   : language === 'ta'
                   ? (preset.ml === 250 ? '¼ லி' : preset.ml === 500 ? '½ லி' : preset.ml === 1000 ? '1 லி' : preset.ml === 1500 ? '1½ லி' : '2 லி')
                   : preset.label;
-                const sub = language === 'ml' ? `${preset.ml} മി.ലി` : language === 'ta' ? `${preset.ml} மி.லி` : preset.sub;
+                const sub = preset.ml === 0
+                  ? (language === 'ta' ? 'வாங்கவில்லை' : language === 'ml' ? 'വാങ്ങിയില്ല' : 'No Milk')
+                  : language === 'ml' ? `${preset.ml} മി.ലി` : language === 'ta' ? `${preset.ml} மி.லி` : preset.sub;
 
+                const isSelected = quantityMl === preset.ml;
                 return (
                   <button
                     key={preset.ml}
@@ -294,10 +300,16 @@ export const CorrectionModal: React.FC<CorrectionModalProps> = ({
                     style={{
                       padding: '0.45rem 0.2rem',
                       borderRadius: '8px',
-                      border: quantityMl === preset.ml ? '2px solid #2563eb' : '1px solid #cbd5e1',
-                      background: quantityMl === preset.ml ? '#eff6ff' : '#f8fafc',
-                      color: quantityMl === preset.ml ? '#1d4ed8' : '#334155',
-                      fontWeight: quantityMl === preset.ml ? 800 : 600,
+                      border: isSelected
+                        ? (preset.ml === 0 ? '2px solid #ef4444' : '2px solid #2563eb')
+                        : '1px solid #cbd5e1',
+                      background: isSelected
+                        ? (preset.ml === 0 ? '#fef2f2' : '#eff6ff')
+                        : '#f8fafc',
+                      color: isSelected
+                        ? (preset.ml === 0 ? '#dc2626' : '#1d4ed8')
+                        : '#334155',
+                      fontWeight: isSelected ? 800 : 600,
                       fontSize: '0.8rem',
                       textAlign: 'center',
                       cursor: 'pointer',
@@ -305,7 +317,7 @@ export const CorrectionModal: React.FC<CorrectionModalProps> = ({
                     }}
                   >
                     <div>{label}</div>
-                    <div style={{ fontSize: '0.65rem', color: '#64748b' }}>{sub}</div>
+                    <div style={{ fontSize: '0.62rem', color: isSelected && preset.ml === 0 ? '#b91c1c' : '#64748b' }}>{sub}</div>
                   </button>
                 );
               })}
@@ -316,7 +328,7 @@ export const CorrectionModal: React.FC<CorrectionModalProps> = ({
               <input
                 type="number"
                 step="50"
-                min="50"
+                min="0"
                 max="50000"
                 className="form-input"
                 value={quantityMl}

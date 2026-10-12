@@ -108,7 +108,7 @@ export async function calculateMonthSettlement(
   const chargesRes = await runner.query(
     `SELECT COALESCE(SUM(total_amount_paise), 0) as "totalCharges",
             COALESCE(SUM(quantity_ml), 0) as "totalMl",
-            COUNT(DISTINCT date) as "distinctDays"
+            COUNT(DISTINCT CASE WHEN quantity_ml > 0 THEN date END) as "distinctDays"
      FROM milk_entries
      WHERE family_id = $1 AND date >= $2 AND date <= $3`,
     [familyId, monthStart, monthEnd]
