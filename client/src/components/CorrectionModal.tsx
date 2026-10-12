@@ -270,28 +270,37 @@ export const CorrectionModal: React.FC<CorrectionModalProps> = ({
 
             {/* Quick Presets */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '0.35rem', marginBottom: '0.5rem' }}>
-              {QUICK_PRESETS.map((preset) => (
-                <button
-                  key={preset.ml}
-                  type="button"
-                  onClick={() => handleSelectPreset(preset.ml)}
-                  style={{
-                    padding: '0.45rem 0.2rem',
-                    borderRadius: '8px',
-                    border: quantityMl === preset.ml ? '2px solid #2563eb' : '1px solid #cbd5e1',
-                    background: quantityMl === preset.ml ? '#eff6ff' : '#f8fafc',
-                    color: quantityMl === preset.ml ? '#1d4ed8' : '#334155',
-                    fontWeight: quantityMl === preset.ml ? 800 : 600,
-                    fontSize: '0.8rem',
-                    textAlign: 'center',
-                    cursor: 'pointer',
-                    transition: 'all 0.15s ease',
-                  }}
-                >
-                  <div>{preset.label}</div>
-                  <div style={{ fontSize: '0.65rem', color: '#64748b' }}>{preset.sub}</div>
-                </button>
-              ))}
+              {QUICK_PRESETS.map((preset) => {
+                const label = language === 'ml'
+                  ? (preset.ml === 250 ? '¼ ലി' : preset.ml === 500 ? '½ ലി' : preset.ml === 1000 ? '1 ലി' : preset.ml === 1500 ? '1½ ലി' : '2 ലി')
+                  : language === 'ta'
+                  ? (preset.ml === 250 ? '¼ லி' : preset.ml === 500 ? '½ லி' : preset.ml === 1000 ? '1 லி' : preset.ml === 1500 ? '1½ லி' : '2 லி')
+                  : preset.label;
+                const sub = language === 'ml' ? `${preset.ml} മി.ലി` : language === 'ta' ? `${preset.ml} மி.லி` : preset.sub;
+
+                return (
+                  <button
+                    key={preset.ml}
+                    type="button"
+                    onClick={() => handleSelectPreset(preset.ml)}
+                    style={{
+                      padding: '0.45rem 0.2rem',
+                      borderRadius: '8px',
+                      border: quantityMl === preset.ml ? '2px solid #2563eb' : '1px solid #cbd5e1',
+                      background: quantityMl === preset.ml ? '#eff6ff' : '#f8fafc',
+                      color: quantityMl === preset.ml ? '#1d4ed8' : '#334155',
+                      fontWeight: quantityMl === preset.ml ? 800 : 600,
+                      fontSize: '0.8rem',
+                      textAlign: 'center',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease',
+                    }}
+                  >
+                    <div>{label}</div>
+                    <div style={{ fontSize: '0.65rem', color: '#64748b' }}>{sub}</div>
+                  </button>
+                );
+              })}
             </div>
 
             {/* Numeric ml input */}
@@ -308,7 +317,7 @@ export const CorrectionModal: React.FC<CorrectionModalProps> = ({
                 style={{ fontWeight: 700 }}
               />
               <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 600, whiteSpace: 'nowrap' }}>
-                = {(quantityMl / 1000).toFixed(2).replace(/\.?0+$/, '')} L
+                = {(quantityMl / 1000).toFixed(2).replace(/\.?0+$/, '')} {language === 'ml' ? 'ലിറ്റർ' : language === 'ta' ? 'லிட்டர்' : 'L'}
               </span>
             </div>
           </div>
@@ -360,7 +369,7 @@ export const CorrectionModal: React.FC<CorrectionModalProps> = ({
               />
             </div>
             <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '0.25rem' }}>
-              {language === 'ta' ? '💡 தொகையை நேரடியாகவும் மாற்றலாம் அல்லது அளவுக்கேற்ப தானாகவும் மாறும்.' : '💡 You can type any custom amount or let it auto-calculate.'}
+              {language === 'ta' ? '💡 தொகையை நேரடியாகவும் மாற்றலாம் அல்லது அளவுக்கேற்ப தானாகவும் மாறும்.' : language === 'ml' ? '💡 തുക നേരിട്ടും മാറ്റാം അല്ലെങ്കിൽ അളവിനനുസരിച്ച് സ്വയമേവ മാറും.' : '💡 You can type any custom amount or let it auto-calculate.'}
             </div>
           </div>
 
@@ -420,11 +429,11 @@ export const CorrectionModal: React.FC<CorrectionModalProps> = ({
 
           {/* 5. NOTES */}
           <div className="form-group" style={{ marginBottom: '1.25rem' }}>
-            <label className="form-label">{t('notes')} / {language === 'ta' ? 'காரணம்' : 'Reason (Optional)'}</label>
+            <label className="form-label">{t('notes')} / {language === 'ta' ? 'காரணம்' : language === 'ml' ? 'കാരണം' : 'Reason (Optional)'}</label>
             <input
               type="text"
               className="form-input"
-              placeholder={language === 'ta' ? 'எ.கா: தேதி மாற்றம் அல்லது தொகை திருத்தம்' : 'e.g. Changed date or adjusted amount'}
+              placeholder={language === 'ta' ? 'எ.கா: தேதி மாற்றம் அல்லது தொகை திருத்தம்' : language === 'ml' ? 'ഉദാ: തീയതി മാറ്റം അല്ലെങ്കിൽ തുക തിരുത്തൽ' : 'e.g. Changed date or adjusted amount'}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
             />

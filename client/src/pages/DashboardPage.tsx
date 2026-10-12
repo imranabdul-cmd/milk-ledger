@@ -8,7 +8,7 @@ import { PaymentModal } from '../components/PaymentModal';
 import { ExportBillModal } from '../components/ExportBillModal';
 import { UpdateRateModal } from '../components/UpdateRateModal';
 import { CorrectionModal, EditableMilkRecord } from '../components/CorrectionModal';
-import { formatDisplayMonthYear, getKolkataTodayDateString } from '../utils/dateFormatter';
+import { formatDisplayMonthYear, formatDisplayDate, getKolkataTodayDateString } from '../utils/dateFormatter';
 import { useAutoSync, notifyDataChanged } from '../hooks/useAutoSync';
 import {
   Droplets,
@@ -778,12 +778,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToTab })
                     {summary.recentActivity.map((act) => {
                       const isPurchase = act.type === 'purchase';
                       const isPaid = act.status === 'paid' || !isPurchase;
-                      const dateObj = new Date(act.date);
-                      const formattedDate = dateObj.toLocaleDateString(language === 'ta' ? 'ta-IN' : language === 'ml' ? 'ml-IN' : 'en-GB', {
-                        day: 'numeric',
-                        month: 'short',
-                        year: 'numeric'
-                      });
+                      const formattedDate = formatDisplayDate(act.date, language);
 
                       return (
                         <tr key={act.id} className="tx-table-row">
@@ -853,7 +848,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToTab })
                                       }}
                                     >
                                       <Trash2 size={14} color="#dc2626" />
-                                      <span>{language === 'ta' ? 'நீக்கு' : language === 'ml' ? 'ഒഴിവാക്കുക' : 'Delete'}</span>
+                                      <span>{language === 'ta' ? 'நீக்கு' : language === 'ml' ? 'ഒഴിவாക്കുക' : 'Delete'}</span>
                                     </button>
                                   )}
                                 </div>
@@ -880,7 +875,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToTab })
                           <span className={`tx-type-pill ${isPurchase ? 'pill-purchase' : 'pill-payment'}`}>
                             {isPurchase ? t('milkPurchase') : t('payments')}
                           </span>
-                          <span className="mobile-tx-date">{act.date}</span>
+                          <span className="mobile-tx-date">{formatDisplayDate(act.date, language)}</span>
                         </div>
                         <div className={`tx-amount-cell ${isPurchase ? 'amt-purchase' : 'amt-payment'}`}>
                           {isPurchase ? '' : '+'}{formatPaise(act.amountPaise)}

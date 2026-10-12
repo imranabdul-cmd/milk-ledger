@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useVoice } from '../context/VoiceContext';
 import { apiRequest } from '../api/client';
-import { MilkEntry, MilkRateHistory, formatPaise } from '@family-milk/shared';
+import { MilkEntry, MilkRateHistory, formatPaise, formatMilkQuantity } from '@family-milk/shared';
 import {
   Volume2,
   VolumeX,
@@ -22,7 +22,9 @@ import {
   Wallet,
   FileSpreadsheet,
   Edit3,
-  Trash2
+  Trash2,
+  ChevronDown,
+  Check
 } from 'lucide-react';
 import { ExportBillModal } from '../components/ExportBillModal';
 import { CorrectionModal } from '../components/CorrectionModal';
@@ -36,7 +38,7 @@ interface MemberHomeScreenProps {
 
 export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAdmin }) => {
   const { user, logout, updateUserLanguage } = useAuth();
-  const { language, toggleLanguage, t } = useLanguage();
+  const { language, setLanguage, t } = useLanguage();
   const { voiceEnabled, toggleVoice, speakText } = useVoice();
 
   const isPrivileged = user?.role === 'owner' || user?.role === 'admin';
@@ -58,12 +60,20 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
   const [lastSavedEntry, setLastSavedEntry] = useState<MilkEntry | null>(null);
   const [isExportModalOpen, setIsExportModalOpen] = useState<boolean>(false);
   const [editingEntry, setEditingEntry] = useState<MilkEntry | null>(null);
+  const [isLangDropdownOpen, setIsLangDropdownOpen] = useState<boolean>(false);
   const headerVideoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
     if (headerVideoRef.current) {
       headerVideoRef.current.play().catch(() => {});
     }
+  }, []);
+
+  // Close language dropdown on outside click
+  useEffect(() => {
+    const handleOutsideClick = () => setIsLangDropdownOpen(false);
+    window.addEventListener('click', handleOutsideClick);
+    return () => window.removeEventListener('click', handleOutsideClick);
   }, []);
 
   // Today's date in Asia/Kolkata
@@ -273,14 +283,6 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
     return `Today, ${dateObj.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}`;
   }, [language]);
 
-  const handleLanguageCycle = () => {
-    const order = ['ml', 'ta', 'en'] as const;
-    const nextIdx = (order.indexOf(language as any) + 1) % order.length;
-    const next = order[nextIdx];
-    toggleLanguage();
-    updateUserLanguage(next);
-  };
-
   return (
     <div className="simple-view-wrapper">
       <div className="simple-view-content">
@@ -342,29 +344,82 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
                 </span>
               </button>
 
-              {/* Language Switcher */}
-              <button
-                type="button"
-                onClick={handleLanguageCycle}
-                className="btn-secondary"
-                style={{
-                  padding: '0.42rem 0.65rem',
-                  borderRadius: '9999px',
-                  border: '1.5px solid #cbd5e1',
-                  background: 'rgba(255, 255, 255, 0.92)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.25rem',
-                  cursor: 'pointer',
-                  backdropFilter: 'blur(8px)',
-                }}
-                title={t('language')}
-              >
-                <Globe size={15} color="#2563eb" />
-                <span style={{ fontSize: '0.76rem', fontWeight: 700 }}>
-                  {language === 'ml' ? 'മലയാളം' : language === 'ta' ? 'தமிழ்' : 'Eng'}
-                </span>
-              </button>
+              {/* Language Selector Dropdown */}
+              <div style={{ position: 'relative' }} onClick={(e) => e.stopPropagation()}>
+                <button
+                  type="button"
+                  onClick={() => setIsLangDropdownOpen(!isLangDropdownOpen)}
+                  className="btn-secondary"
+                  style={{
+                    padding: '0.42rem 0.65rem',
+                    borderRadius: '9999px',
+                    border: '1.5px solid #cbd5e1',
+                    background: 'rgba(255, 255, 255, 0.92)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.25rem',
+                    cursor: 'pointer',
+                    backdropFilter: 'blur(8px)',
+                  }}
+                  title={t('language')}
+                >
+                  <Globe size={15} color="#2563eb" />
+                  <span style={{ fontSize: '0.76rem', fontWeight: 700 }}>
+                    {language === 'ml' ? 'മലയാളം' : language === 'ta' ? 'தமிழ்' : 'English'}
+                  </span>
+                  <ChevronDown size={12} style={{ opacity: 0.7 }} />
+                </button>
+
+                {isLangDropdownOpen && (
+                  <div
+                    className="header-lang-dropdown"
+                    style={{
+                      position: 'absolute',
+                      top: 'calc(100% + 6px)',
+                      right: 0,
+                      zIndex: 200,
+                      minWidth: '150px'
+                    }}
+                  >
+                    <button
+                      type="button"
+                      className={`header-lang-item ${language === 'en' ? 'active' : ''}`}
+                      onClick={() => {
+                        setLanguage('en');
+                        updateUserLanguage('en');
+                        setIsLangDropdownOpen(false);
+                      }}
+                    >
+                      <span className="lang-item-name">English</span>
+                      {language === 'en' && <Check size={14} color="#2563eb" />}
+                    </button>
+                    <button
+                      type="button"
+                      className={`header-lang-item ${language === 'ta' ? 'active' : ''}`}
+                      onClick={() => {
+                        setLanguage('ta');
+                        updateUserLanguage('ta');
+                        setIsLangDropdownOpen(false);
+                      }}
+                    >
+                      <span className="lang-item-name">தமிழ் (Tamil)</span>
+                      {language === 'ta' && <Check size={14} color="#2563eb" />}
+                    </button>
+                    <button
+                      type="button"
+                      className={`header-lang-item ${language === 'ml' ? 'active' : ''}`}
+                      onClick={() => {
+                        setLanguage('ml');
+                        updateUserLanguage('ml');
+                        setIsLangDropdownOpen(false);
+                      }}
+                    >
+                      <span className="lang-item-name">മലയാളം (Malayalam)</span>
+                      {language === 'ml' && <Check size={14} color="#2563eb" />}
+                    </button>
+                  </div>
+                )}
+              </div>
 
               {/* Simple Logout */}
               <button
@@ -589,7 +644,7 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
                   >
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
                       <div style={{ fontWeight: 800, color: '#166534', fontSize: '1.05rem', display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap' }}>
-                        <span>{entry.quantityMl >= 1000 ? `${(entry.quantityMl / 1000).toFixed(1).replace('.0', '')} L` : `${entry.quantityMl} ml`}</span>
+                        <span>{formatMilkQuantity(entry.quantityMl, language)}</span>
                         <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#15803d' }}>
                           ({formatPaise(entry.totalAmountPaise)})
                         </span>
@@ -960,7 +1015,9 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
             <button
               type="button"
               onClick={() => {
-                const qty = selectedQuantityMl === 500 ? (language === 'ml' ? 'അര ലിറ്റർ' : 'Half litre') : (language === 'ml' ? 'ഒരു ലിറ്റർ' : 'One litre');
+                const qty = selectedQuantityMl === 500
+                  ? (language === 'ml' ? 'അര ലിറ്റർ' : language === 'ta' ? 'அரை லிட்டர்' : 'Half litre')
+                  : (language === 'ml' ? 'ഒരു ലിറ്റർ' : language === 'ta' ? 'ஒரு லிட்டர்' : 'One litre');
                 if (language === 'ml') speakText(`${qty} പാൽ. തുക ${calculatedRupees} രൂപ. പണം നൽകിയോ അതോ പിന്നെ നൽകുമോ?`, true);
                 else if (language === 'ta') speakText(`${qty} பால். தொகை ${calculatedRupees} ரூபாய். பணம் கொடுத்தாச்சா?`, true);
                 else speakText(`${qty} milk. Amount ${calculatedRupees} rupees. Paid now or pay later?`, true);
@@ -1171,7 +1228,7 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
             }}
           >
             <div style={{ fontSize: '1.4rem', fontWeight: 900, color: '#0f172a' }}>
-              {lastSavedEntry.quantityMl >= 1000 ? `${(lastSavedEntry.quantityMl / 1000).toFixed(1).replace('.0', '')} Litre` : `${lastSavedEntry.quantityMl} ml`}
+              {formatMilkQuantity(lastSavedEntry.quantityMl, language)}
             </div>
             <div style={{ fontSize: '1.8rem', fontWeight: 900, color: '#15803d', marginTop: '0.2rem' }}>
               {formatPaise(lastSavedEntry.totalAmountPaise)}
@@ -1249,7 +1306,7 @@ export const MemberHomeScreen: React.FC<MemberHomeScreenProps> = ({ onSwitchToAd
               >
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
                   <div style={{ fontWeight: 700, color: '#0f172a', fontSize: '0.92rem', display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap' }}>
-                    <span>{entry.quantityMl >= 1000 ? `${(entry.quantityMl / 1000).toFixed(1).replace('.0', '')} L` : `${entry.quantityMl} ml`}</span>
+                    <span>{formatMilkQuantity(entry.quantityMl, language)}</span>
                     <span style={{ color: '#2563eb', fontWeight: 700 }}>• {formatPaise(entry.totalAmountPaise)}</span>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>

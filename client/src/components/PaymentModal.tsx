@@ -19,7 +19,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   onSuccess,
   defaultAmountRupees = 0,
 }) => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
 
   const todayStr = getKolkataTodayDateString();
   const [date, setDate] = useState<string>(todayStr);
@@ -157,7 +157,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
             <input
               type="text"
               className="form-input"
-              placeholder="e.g. Paid to milkman via GPay"
+              placeholder={language === 'ta' ? 'எ.கா: பால் காரரிடம் கூகுள் பே மூலம் செலுத்தியது' : language === 'ml' ? 'ഉദാ: പാൽക്കാരന് GPay വഴി നൽകി' : 'e.g. Paid to milkman via GPay'}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
             />

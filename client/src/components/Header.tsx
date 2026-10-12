@@ -10,7 +10,9 @@ import {
   FileText,
   Users,
   Sparkles,
-  Menu
+  Menu,
+  Check,
+  ChevronDown
 } from 'lucide-react';
 import { MobileDrawer } from './MobileDrawer';
 
@@ -91,9 +93,10 @@ export const AnimatedMilkGlass: React.FC<{ size?: number }> = ({ size = 30 }) =>
 };
 
 export const Header: React.FC<HeaderProps> = ({ currentTab, onTabChange, onSwitchToSimple }) => {
-  const { language, toggleLanguage, t } = useLanguage();
+  const { language, setLanguage, t } = useLanguage();
   const { user, logout, updateUserLanguage } = useAuth();
   const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
+  const [isLangDropdownOpen, setIsLangDropdownOpen] = useState<boolean>(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
@@ -102,13 +105,12 @@ export const Header: React.FC<HeaderProps> = ({ currentTab, onTabChange, onSwitc
     }
   }, []);
 
-  const handleLanguageToggle = () => {
-    const order = ['ml', 'ta', 'en'] as const;
-    const nextIdx = (order.indexOf(language as any) + 1) % order.length;
-    const next = order[nextIdx];
-    toggleLanguage();
-    updateUserLanguage(next);
-  };
+  // Close language dropdown on outside click
+  useEffect(() => {
+    const handleOutsideClick = () => setIsLangDropdownOpen(false);
+    window.addEventListener('click', handleOutsideClick);
+    return () => window.removeEventListener('click', handleOutsideClick);
+  }, []);
 
   const handleLogout = () => {
     if (window.confirm(t('logoutConfirm'))) {
@@ -189,15 +191,60 @@ export const Header: React.FC<HeaderProps> = ({ currentTab, onTabChange, onSwitc
             </button>
           )}
 
-          {/* Language Toggle Button */}
-          <button
-            className="lang-btn"
-            onClick={handleLanguageToggle}
-            title={t('language')}
-          >
-            <Globe size={15} color="#60a5fa" />
-            <span>{language === 'ml' ? 'മലയാളം' : language === 'ta' ? 'தமிழ்' : 'English'}</span>
-          </button>
+          {/* Language Selector Dropdown */}
+          <div className="header-lang-wrapper" onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              className="lang-btn"
+              onClick={() => setIsLangDropdownOpen(!isLangDropdownOpen)}
+              title={t('language')}
+            >
+              <Globe size={15} color="#60a5fa" />
+              <span>{language === 'ml' ? 'മലയാളം' : language === 'ta' ? 'தமிழ்' : 'English'}</span>
+              <ChevronDown size={13} style={{ opacity: 0.8 }} />
+            </button>
+
+            {isLangDropdownOpen && (
+              <div className="header-lang-dropdown">
+                <button
+                  type="button"
+                  className={`header-lang-item ${language === 'en' ? 'active' : ''}`}
+                  onClick={() => {
+                    setLanguage('en');
+                    updateUserLanguage('en');
+                    setIsLangDropdownOpen(false);
+                  }}
+                >
+                  <span className="lang-item-name">English</span>
+                  {language === 'en' && <Check size={14} color="#2563eb" />}
+                </button>
+                <button
+                  type="button"
+                  className={`header-lang-item ${language === 'ta' ? 'active' : ''}`}
+                  onClick={() => {
+                    setLanguage('ta');
+                    updateUserLanguage('ta');
+                    setIsLangDropdownOpen(false);
+                  }}
+                >
+                  <span className="lang-item-name">தமிழ் (Tamil)</span>
+                  {language === 'ta' && <Check size={14} color="#2563eb" />}
+                </button>
+                <button
+                  type="button"
+                  className={`header-lang-item ${language === 'ml' ? 'active' : ''}`}
+                  onClick={() => {
+                    setLanguage('ml');
+                    updateUserLanguage('ml');
+                    setIsLangDropdownOpen(false);
+                  }}
+                >
+                  <span className="lang-item-name">മലയാളം (Malayalam)</span>
+                  {language === 'ml' && <Check size={14} color="#2563eb" />}
+                </button>
+              </div>
+            )}
+          </div>
 
           {/* User Profile Badge matching reference image */}
           <div className="header-user-profile-badge" title={user?.name || 'Family Admin'}>

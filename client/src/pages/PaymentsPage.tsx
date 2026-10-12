@@ -79,12 +79,12 @@ export const PaymentsPage: React.FC = () => {
       {/* Payment List */}
       {isLoading ? (
         <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>
-          <p>{language === 'ml' ? 'വിവരങ്ങൾ എടുക്കുന്നു...' : 'Loading payments...'}</p>
+          <p>{language === 'ml' ? 'വിവരങ്ങൾ എടുക്കുന്നു...' : language === 'ta' ? 'பணப் பதிவுகளை ஏற்றுகிறது...' : 'Loading payments...'}</p>
         </div>
       ) : payments.length === 0 ? (
         <div style={{ background: 'white', borderRadius: 'var(--radius-lg)', padding: '3rem 1rem', textAlign: 'center', color: '#94a3b8' }}>
           <CreditCard size={44} style={{ margin: '0 auto 0.75rem', color: '#cbd5e1' }} />
-          <p style={{ fontWeight: 600 }}>{language === 'ml' ? 'ഈ മാസത്തിൽ പണം നൽകിയത് രേഖപ്പെടുത്തിയിട്ടില്ല' : 'No payments found for this month.'}</p>
+          <p style={{ fontWeight: 600 }}>{language === 'ml' ? 'ഈ മാസത്തിൽ പണം നൽകിയത് രേഖപ്പെടുത്തിയിട്ടില്ല' : language === 'ta' ? 'இந்த மாதத்தில் பணப் பதிவுகள் எதுவும் இல்லை' : 'No payments found for this month.'}</p>
         </div>
       ) : (
         <div>
@@ -119,7 +119,7 @@ export const PaymentsPage: React.FC = () => {
                   +{formatPaise(p.amountPaise)}
                 </div>
                 <span style={{ fontSize: '0.75rem', background: '#ecfdf5', color: '#047857', padding: '0.2rem 0.5rem', borderRadius: '4px', fontWeight: 700 }}>
-                  Recorded
+                  {language === 'ta' ? 'பதிவானது' : language === 'ml' ? 'രേഖപ്പെടുത്തി' : 'Recorded'}
                 </span>
               </div>
             </div>

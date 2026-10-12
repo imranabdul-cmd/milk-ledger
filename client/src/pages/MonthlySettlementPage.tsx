@@ -55,7 +55,7 @@ export const MonthlySettlementPage: React.FC = () => {
           notes: `Official month close by ${user?.name || 'Admin'}`
         }),
       });
-      alert(language === 'ml' ? 'മാസത്തെ കണക്ക് ഫ്രീസ് ചെയ്തു!' : 'Month statement officially closed!');
+      alert(language === 'ml' ? 'മാസത്തെ കണക്ക് ഫ്രീസ് ചെയ്തു!' : language === 'ta' ? 'மாத கணக்கு வெற்றிகரமாக முடிக்கப்பட்டது!' : 'Month statement officially closed!');
       fetchSettlementData(true);
       notifyDataChanged();
     } catch (err: any) {
@@ -79,7 +79,7 @@ export const MonthlySettlementPage: React.FC = () => {
             {t('monthlySettlement')}
           </h2>
           <p style={{ fontSize: '0.85rem', color: '#64748b' }}>
-            {formatDisplayMonthYear(selectedMonth, language)} • {isCurrentMonthClosed ? '🔒 (Locked/Frozen)' : '🟢 (Active)'}
+            {formatDisplayMonthYear(selectedMonth, language)} • {isCurrentMonthClosed ? (language === 'ta' ? '🔒 (முடிக்கப்பட்டது)' : language === 'ml' ? '🔒 (ഫ്രീസ് ചെയ്തു)' : '🔒 (Locked/Frozen)') : (language === 'ta' ? '🟢 (செயலில் உள்ளது)' : language === 'ml' ? '🟢 (സജീവം)' : '🟢 (Active)')}
           </p>
         </div>
 
@@ -108,7 +108,7 @@ export const MonthlySettlementPage: React.FC = () => {
 
       {isLoading ? (
         <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>
-          <p>{language === 'ml' ? 'കണക്കുകൾ തയ്യാറാക്കുന്നു...' : 'Calculating settlement...'}</p>
+          <p>{language === 'ml' ? 'കണക്കുകൾ തയ്യാറാക്കുന്നു...' : language === 'ta' ? 'கணக்குகளை கணக்கிடுகிறது...' : 'Calculating settlement...'}</p>
         </div>
       ) : (
         <div>

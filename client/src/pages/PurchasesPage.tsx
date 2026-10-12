@@ -76,7 +76,7 @@ export const PurchasesPage: React.FC = () => {
             {t('purchases')}
           </h2>
           <p style={{ fontSize: '0.85rem', color: '#64748b' }}>
-            {entries.length} {language === 'ml' ? 'ഇടപാടുകൾ' : 'purchases'}
+            {entries.length} {language === 'ml' ? 'ഇടപാടുകൾ' : language === 'ta' ? 'பதிவுகள்' : 'purchases'}
           </p>
         </div>
 
@@ -94,7 +94,7 @@ export const PurchasesPage: React.FC = () => {
       <div style={{ background: 'white', borderRadius: 'var(--radius-md)', padding: '1rem', marginBottom: '1.25rem', display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center', border: '1px solid var(--slate-200)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#64748b', fontSize: '0.85rem', fontWeight: 700 }}>
           <Filter size={16} />
-          <span>Filter:</span>
+          <span>{language === 'ta' ? 'வடிகட்டி:' : language === 'ml' ? 'ഫിൽട്ടർ:' : 'Filter:'}</span>
         </div>
 
         {/* Month Selector */}
@@ -132,12 +132,12 @@ export const PurchasesPage: React.FC = () => {
       {/* Entries List */}
       {isLoading ? (
         <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>
-          <p>{language === 'ml' ? 'വിവരങ്ങൾ എടുക്കുന്നു...' : 'Loading purchases...'}</p>
+          <p>{language === 'ml' ? 'വിവരങ്ങൾ എടുക്കുന്നു...' : language === 'ta' ? 'பதிவுகளை ஏற்றுகிறது...' : 'Loading purchases...'}</p>
         </div>
       ) : entries.length === 0 ? (
         <div style={{ background: 'white', borderRadius: 'var(--radius-lg)', padding: '3rem 1rem', textAlign: 'center', color: '#94a3b8' }}>
           <Droplets size={44} style={{ margin: '0 auto 0.75rem', color: '#cbd5e1' }} />
-          <p style={{ fontWeight: 600 }}>{language === 'ml' ? 'ഈ മാസത്തിൽ വാങ്ങലുകൾ രേഖപ്പെടുത്തിയിട്ടില്ല' : 'No purchases found for this filter.'}</p>
+          <p style={{ fontWeight: 600 }}>{language === 'ml' ? 'ഈ മാസത്തിൽ വാങ്ങലുകൾ രേഖപ്പെടുത്തിയിട്ടില്ല' : language === 'ta' ? 'இந்த மாதத்தில் பால் பதிவுகள் எதுவும் இல்லை' : 'No purchases found for this filter.'}</p>
         </div>
       ) : (
         <div>
@@ -154,7 +154,7 @@ export const PurchasesPage: React.FC = () => {
                     </span>
                     {entry.isCorrected && (
                       <span style={{ fontSize: '0.7rem', background: '#fef3c7', color: '#b45309', padding: '0.15rem 0.4rem', borderRadius: '4px', fontWeight: 700 }}>
-                        Corrected
+                        {language === 'ta' ? 'திருத்தப்பட்டது' : language === 'ml' ? 'തിരുത്തിയത്' : 'Corrected'}
                       </span>
                     )}
                   </div>

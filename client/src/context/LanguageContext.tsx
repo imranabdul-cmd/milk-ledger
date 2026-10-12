@@ -22,6 +22,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setLanguageState(lang);
     localStorage.setItem('milk_lang', lang);
     document.documentElement.lang = lang;
+    window.dispatchEvent(new CustomEvent('milk_language_changed', { detail: lang }));
   };
 
   const toggleLanguage = () => {
@@ -33,6 +34,25 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   useEffect(() => {
     document.documentElement.lang = language;
     localStorage.setItem('milk_lang', language);
+
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === 'milk_lang' && e.newValue && (e.newValue === 'en' || e.newValue === 'ta' || e.newValue === 'ml')) {
+        setLanguageState(e.newValue as Language);
+      }
+    };
+
+    const handleCustomEvent = (e: any) => {
+      if (e.detail && (e.detail === 'en' || e.detail === 'ta' || e.detail === 'ml')) {
+        setLanguageState(e.detail as Language);
+      }
+    };
+
+    window.addEventListener('storage', handleStorage);
+    window.addEventListener('milk_language_changed', handleCustomEvent);
+    return () => {
+      window.removeEventListener('storage', handleStorage);
+      window.removeEventListener('milk_language_changed', handleCustomEvent);
+    };
   }, [language]);
 
   const t = (key: TranslationKey): string => {

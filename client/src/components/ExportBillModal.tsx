@@ -59,6 +59,11 @@ export const ExportBillModal: React.FC<ExportBillModalProps> = ({
   // Ref to the printable/shareable card element for html2canvas
   const billCardRef = useRef<HTMLDivElement>(null);
 
+  // Sync statement language if global language changes
+  useEffect(() => {
+    setStatementLang(language);
+  }, [language]);
+
   // Sync selectedMonth if prop changes
   useEffect(() => {
     if (initialYearMonth) {

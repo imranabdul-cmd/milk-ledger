@@ -22,6 +22,11 @@ export const WhatsAppShareModal: React.FC<WhatsAppShareModalProps> = ({
   const [copied, setCopied] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
+  // Sync statement language if global language changes
+  useEffect(() => {
+    setStatementLang(language);
+  }, [language]);
+
   useEffect(() => {
     if (!isOpen) return;
 
@@ -64,29 +69,37 @@ export const WhatsAppShareModal: React.FC<WhatsAppShareModalProps> = ({
           </button>
         </div>
 
-        {/* Language Selector for Statement */}
-        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
-          <button
-            type="button"
-            className={`btn-secondary ${statementLang === 'ml' ? 'selected-paid' : ''}`}
-            style={{ flex: 1, justifyContent: 'center', borderColor: statementLang === 'ml' ? '#2563eb' : undefined }}
-            onClick={() => setStatementLang('ml')}
-          >
-            മലയാളം
-          </button>
+        {/* Language Selector for Statement: All 3 Languages */}
+        <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '1rem' }}>
           <button
             type="button"
             className={`btn-secondary ${statementLang === 'en' ? 'selected-paid' : ''}`}
-            style={{ flex: 1, justifyContent: 'center', borderColor: statementLang === 'en' ? '#2563eb' : undefined }}
+            style={{ flex: 1, justifyContent: 'center', padding: '0.35rem 0.5rem', fontSize: '0.82rem', borderColor: statementLang === 'en' ? '#2563eb' : undefined }}
             onClick={() => setStatementLang('en')}
           >
             English
+          </button>
+          <button
+            type="button"
+            className={`btn-secondary ${statementLang === 'ta' ? 'selected-paid' : ''}`}
+            style={{ flex: 1, justifyContent: 'center', padding: '0.35rem 0.5rem', fontSize: '0.82rem', borderColor: statementLang === 'ta' ? '#2563eb' : undefined }}
+            onClick={() => setStatementLang('ta')}
+          >
+            தமிழ்
+          </button>
+          <button
+            type="button"
+            className={`btn-secondary ${statementLang === 'ml' ? 'selected-paid' : ''}`}
+            style={{ flex: 1, justifyContent: 'center', padding: '0.35rem 0.5rem', fontSize: '0.82rem', borderColor: statementLang === 'ml' ? '#2563eb' : undefined }}
+            onClick={() => setStatementLang('ml')}
+          >
+            മലയാളം
           </button>
         </div>
 
         {/* Formatted Text Box */}
         <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '12px', padding: '1rem', marginBottom: '1.25rem', whiteSpace: 'pre-wrap', fontFamily: 'monospace', fontSize: '0.85rem', maxHeight: '240px', overflowY: 'auto' }}>
-          {isLoading ? 'Loading statement...' : statementText}
+          {isLoading ? (language === 'ta' ? 'அறிக்கையை ஏற்றுகிறது...' : language === 'ml' ? 'സ്റ്റേറ്റ്‌മെന്റ് ശേഖരിക്കുന്നു...' : 'Loading statement...') : statementText}
         </div>
 
         {/* Action Buttons */}
@@ -99,7 +112,7 @@ export const WhatsAppShareModal: React.FC<WhatsAppShareModalProps> = ({
             disabled={isLoading}
           >
             {copied ? <Check size={18} color="#059669" /> : <Copy size={18} />}
-            <span>{copied ? 'Copied!' : 'Copy'}</span>
+            <span>{copied ? t('copied') : (language === 'ta' ? 'நகலெடு' : language === 'ml' ? 'കോപ്പി' : 'Copy')}</span>
           </button>
 
           <a

@@ -473,7 +473,7 @@ export const LoginPage: React.FC = () => {
                 }}
               >
                 {showPin ? <EyeOff size={14} /> : <Eye size={14} />}
-                <span>{showPin ? (language === 'ta' ? 'மறை' : 'Hide') : (language === 'ta' ? 'காட்டு' : 'Show')}</span>
+                <span>{showPin ? (language === 'ta' ? 'மறை' : language === 'ml' ? 'മറയ്ക്കുക' : 'Hide') : (language === 'ta' ? 'காட்டு' : language === 'ml' ? 'കാണിക്കുക' : 'Show')}</span>
               </button>
             </div>
 

@@ -130,7 +130,7 @@ export const QuickPurchaseModal: React.FC<QuickPurchaseModalProps> = ({
                 style={{ borderColor: quantityMl === 500 && !isCustomMode ? '#2563eb' : undefined }}
                 onClick={() => handleSelectPreset(500)}
               >
-                <span className="quick-qty-val">{language === 'ml' ? '½ ലി' : '½ L'}</span>
+                <span className="quick-qty-val">{language === 'ml' ? '½ ലി' : language === 'ta' ? '½ லி' : '½ L'}</span>
                 <span className="quick-qty-sub">{t('halfLitreSub')}</span>
               </button>
 
@@ -140,7 +140,7 @@ export const QuickPurchaseModal: React.FC<QuickPurchaseModalProps> = ({
                 style={{ borderColor: quantityMl === 1000 && !isCustomMode ? '#2563eb' : undefined }}
                 onClick={() => handleSelectPreset(1000)}
               >
-                <span className="quick-qty-val">{language === 'ml' ? '1 ലി' : '1 L'}</span>
+                <span className="quick-qty-val">{language === 'ml' ? '1 ലി' : language === 'ta' ? '1 லி' : '1 L'}</span>
                 <span className="quick-qty-sub">{t('oneLitreSub')}</span>
               </button>
 
@@ -169,7 +169,11 @@ export const QuickPurchaseModal: React.FC<QuickPurchaseModalProps> = ({
                   autoFocus
                 />
                 <small style={{ color: '#64748b', display: 'block', marginTop: '0.25rem' }}>
-                  {language === 'ml' ? 'മില്ലിലിറ്ററിൽ നൽകുക (1 ലിറ്റർ = 1000 ml)' : 'Enter in millilitres (1 Litre = 1000 ml)'}
+                  {language === 'ml'
+                    ? 'മില്ലിലിറ്ററിൽ നൽകുക (1 ലിറ്റർ = 1000 ml)'
+                    : language === 'ta'
+                    ? 'மில்லிலிட்டரில் உள்ளிடவும் (1 லிட்டர் = 1000 ml)'
+                    : 'Enter in millilitres (1 Litre = 1000 ml)'}
                 </small>
               </div>
             )}
