@@ -147,7 +147,8 @@ export const Header: React.FC<HeaderProps> = ({ currentTab, onTabChange, onSwitc
         title={t('language')}
       >
         <Globe size={15} color="#60a5fa" />
-        <span>{language === 'ml' ? 'മലയാളം' : language === 'ta' ? 'தமிழ்' : 'English'}</span>
+        <span className="lang-full-name">{language === 'ml' ? 'മലയാളം' : language === 'ta' ? 'தமிழ்' : 'English'}</span>
+        <span className="lang-short-name">{language === 'ml' ? 'മ' : language === 'ta' ? 'த' : 'EN'}</span>
         <ChevronDown size={13} style={{ opacity: 0.8 }} />
       </button>
 

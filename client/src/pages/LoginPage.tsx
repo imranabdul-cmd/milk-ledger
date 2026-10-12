@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+﻿import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import {
@@ -109,7 +109,7 @@ export const LoginPage: React.FC = () => {
       <div className="login-video-overlay" />
 
       {/* ==============================================================
-          TOP FLOATING NAVIGATION BAR
+          TOP FLOATING NAVIGATION BAR (fixed above scroll area)
           ============================================================== */}
       <header className="login-top-nav">
         {/* Brand Pill */}
@@ -145,70 +145,27 @@ export const LoginPage: React.FC = () => {
         </div>
 
         {/* Right Action Controls: Language Selector */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          {/* Quick Language Switcher Pills */}
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              background: 'rgba(15, 23, 42, 0.75)',
-              backdropFilter: 'blur(16px)',
-              border: '1px solid rgba(255, 255, 255, 0.18)',
-              borderRadius: '9999px',
-              padding: '0.2rem 0.3rem 0.2rem 0.5rem',
-              boxShadow: '0 4px 16px rgba(0,0,0,0.25)',
-              gap: '0.2rem'
-            }}
-          >
-            <Globe size={13} color="#94a3b8" />
+        <div className="login-lang-switcher-wrap">
+          <div className="login-lang-switcher">
+            <Globe size={12} color="#94a3b8" />
             <button
               type="button"
               onClick={() => setLanguage('ta')}
-              style={{
-                background: language === 'ta' ? '#2563eb' : 'transparent',
-                color: language === 'ta' ? '#ffffff' : '#94a3b8',
-                border: 'none',
-                borderRadius: '999px',
-                padding: '0.25rem 0.6rem',
-                fontSize: '0.75rem',
-                fontWeight: 700,
-                cursor: 'pointer',
-                transition: 'all 0.15s ease'
-              }}
+              className={`login-lang-pill ${language === 'ta' ? 'active' : ''}`}
             >
-              தமிழ்
+              த
             </button>
             <button
               type="button"
               onClick={() => setLanguage('ml')}
-              style={{
-                background: language === 'ml' ? '#2563eb' : 'transparent',
-                color: language === 'ml' ? '#ffffff' : '#94a3b8',
-                border: 'none',
-                borderRadius: '999px',
-                padding: '0.25rem 0.6rem',
-                fontSize: '0.75rem',
-                fontWeight: 700,
-                cursor: 'pointer',
-                transition: 'all 0.15s ease'
-              }}
+              className={`login-lang-pill ${language === 'ml' ? 'active' : ''}`}
             >
-              മലയാളം
+              മ
             </button>
             <button
               type="button"
               onClick={() => setLanguage('en')}
-              style={{
-                background: language === 'en' ? '#2563eb' : 'transparent',
-                color: language === 'en' ? '#ffffff' : '#94a3b8',
-                border: 'none',
-                borderRadius: '999px',
-                padding: '0.25rem 0.6rem',
-                fontSize: '0.75rem',
-                fontWeight: 700,
-                cursor: 'pointer',
-                transition: 'all 0.15s ease'
-              }}
+              className={`login-lang-pill ${language === 'en' ? 'active' : ''}`}
             >
               EN
             </button>
@@ -217,11 +174,14 @@ export const LoginPage: React.FC = () => {
       </header>
 
       {/* ==============================================================
-          THE LUXURY GLASSMORPHIC LOGIN CARD
+          SCROLLABLE CONTENT AREA: Card + Footer
+          Sits above the fixed video/overlay layers, scrolls inside the
+          fixed viewport container so the page itself never scrolls.
           ============================================================== */}
-      <main className="login-glass-card">
+      <div className="login-scroll-area">
+        <main className="login-glass-card">
         {/* Brand Logo & Headline */}
-        <div style={{ textAlign: 'center', marginBottom: '1.4rem' }}>
+        <div className="login-brand-section">
           {/* Logo with Soft Gradient Glow */}
           <div
             className="login-logo-glow"
@@ -246,49 +206,16 @@ export const LoginPage: React.FC = () => {
           </div>
 
           {/* Micro Tagline Pill */}
-          <div
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.35rem',
-              background: 'rgba(255, 255, 255, 0.2)',
-              backdropFilter: 'blur(8px)',
-              border: '1.5px solid rgba(255, 255, 255, 0.35)',
-              color: '#1d4ed8',
-              fontSize: '0.72rem',
-              fontWeight: 800,
-              padding: '0.22rem 0.75rem',
-              borderRadius: '999px',
-              marginBottom: '0.45rem',
-              letterSpacing: '0.02em',
-              textTransform: 'uppercase',
-              boxShadow: '0 2px 8px rgba(37, 99, 235, 0.12)'
-            }}
-          >
-            <Sparkles size={12} color="#2563eb" />
+          <div className="login-tagline-pill">
+            <Sparkles size={11} color="#2563eb" />
             <span>Smart Dairy Ledger</span>
           </div>
 
-          <h1
-            style={{
-              fontSize: '1.55rem',
-              fontWeight: 900,
-              color: '#0f172a',
-              letterSpacing: '-0.02em',
-              marginBottom: '0.25rem'
-            }}
-          >
+          <h1 className="login-heading">
             {t('appName')}
           </h1>
 
-          <p
-            style={{
-              fontSize: '0.85rem',
-              color: '#64748b',
-              fontWeight: 500,
-              margin: 0
-            }}
-          >
+          <p className="login-subtitle">
             {language === 'ta'
               ? 'தினசரி பால் கணக்கு & மாதாந்திர தீர்வு'
               : language === 'ml'
@@ -452,7 +379,7 @@ export const LoginPage: React.FC = () => {
           </div>
 
           {/* COMMON: SECURITY PIN INPUT WITH SHOW/HIDE TOGGLE */}
-          <div className="login-input-group" style={{ marginBottom: '1.6rem' }}>
+          <div className="login-input-group login-pin-group">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
               <label
                 className="form-label"
@@ -537,24 +464,8 @@ export const LoginPage: React.FC = () => {
         </form>
 
         {/* Security Reassurance Trust Badge */}
-        <div
-          style={{
-            marginTop: '1.35rem',
-            padding: '0.75rem 0.95rem',
-            background: 'rgba(255, 255, 255, 0.22)',
-            backdropFilter: 'blur(8px)',
-            border: '1.5px solid rgba(255, 255, 255, 0.35)',
-            borderRadius: '16px',
-            fontSize: '0.8rem',
-            color: '#064e3b',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '0.5rem',
-            boxShadow: '0 4px 14px rgba(0, 0, 0, 0.08)'
-          }}
-        >
-          <ShieldCheck size={18} color="#15803d" style={{ flexShrink: 0 }} />
+        <div className="login-trust-badge">
+          <ShieldCheck size={16} color="#15803d" style={{ flexShrink: 0 }} />
           <span style={{ fontWeight: 700 }}>
             {t('persistentLoginNote')}
           </span>
@@ -562,21 +473,11 @@ export const LoginPage: React.FC = () => {
       </main>
 
       {/* Floating Bottom Footer */}
-      <footer
-        style={{
-          position: 'relative',
-          zIndex: 10,
-          color: 'rgba(255, 255, 255, 0.65)',
-          fontSize: '0.75rem',
-          fontWeight: 600,
-          textAlign: 'center',
-          paddingBottom: '1.5rem',
-          letterSpacing: '0.02em',
-          textShadow: '0 1px 3px rgba(0,0,0,0.5)'
-        }}
-      >
-        Family Milk Account • Pure & Simple Milk Tracking
+      <footer className="login-footer">
+        Family Milk Account &bull; Pure &amp; Simple Milk Tracking
       </footer>
+      </div>
     </div>
   );
 };
+
