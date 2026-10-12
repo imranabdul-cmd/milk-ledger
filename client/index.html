@@ -173,7 +173,23 @@
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js').catch((err) => {
+          navigator.serviceWorker.register('/sw.js').then((registration) => {
+            // Check for updates immediately on launch
+            registration.update().catch(() => {});
+
+            // Auto-check for updates whenever user returns to the app
+            const triggerSwUpdate = () => {
+              if (navigator.onLine && registration) {
+                registration.update().catch(() => {});
+              }
+            };
+
+            document.addEventListener('visibilitychange', () => {
+              if (document.visibilityState === 'visible') triggerSwUpdate();
+            });
+            window.addEventListener('focus', triggerSwUpdate);
+            window.addEventListener('pageshow', triggerSwUpdate);
+          }).catch((err) => {
             console.log('SW registration skipped:', err);
           });
         });

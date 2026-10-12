@@ -84,11 +84,27 @@ export function createApp(): Express {
   const activeDistPath = distCandidates.find((candidate) => fs.existsSync(candidate)) || null;
 
   if (activeDistPath) {
-    app.use(express.static(activeDistPath));
+    app.use(
+      express.static(activeDistPath, {
+        setHeaders: (res, filePath) => {
+          if (filePath.endsWith('.html') || filePath.endsWith('sw.js')) {
+            res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
+            res.setHeader('Pragma', 'no-cache');
+            res.setHeader('Expires', '0');
+          } else if (filePath.includes('/assets/')) {
+            res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+          }
+        },
+      })
+    );
+
     app.get('*', (req: Request, res: Response, next: NextFunction) => {
       if (req.path.startsWith('/api')) {
         return next();
       }
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
       res.sendFile(path.join(activeDistPath, 'index.html'));
     });
   }

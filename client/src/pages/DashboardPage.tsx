@@ -88,8 +88,10 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToTab })
     }
   }, []);
 
-  const fetchSummary = useCallback(async (showRefreshing = false) => {
-    if (showRefreshing) setIsRefreshing(true);
+  const fetchSummary = useCallback(async (silent = false) => {
+    if (!silent && !summary) {
+      setIsLoading(true);
+    }
     try {
       const [sumRes, entriesRes] = await Promise.all([
         apiRequest<{ summary: DashboardSummary }>(`/api/settlement/summary?month=${selectedMonth}`),
@@ -103,7 +105,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToTab })
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, [selectedMonth]);
+  }, [selectedMonth, summary]);
 
   // Fetch immediately on mount & when selectedMonth changes
   useEffect(() => {
