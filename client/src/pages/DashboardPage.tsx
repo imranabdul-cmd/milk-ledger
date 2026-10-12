@@ -11,6 +11,7 @@ import { CorrectionModal, EditableMilkRecord } from '../components/CorrectionMod
 import { formatDisplayMonthYear, formatDisplayDate, getKolkataTodayDateString } from '../utils/dateFormatter';
 import { useAutoSync, notifyDataChanged } from '../hooks/useAutoSync';
 import { useToast } from '../context/ToastContext';
+import { MilkGlassLoader } from '../components/MilkGlassLoader';
 import {
   Droplets,
   Calendar,
@@ -199,7 +200,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToTab })
   if (isLoading && !summary) {
     return (
       <div className="dashboard-loading-container">
-        <RefreshCw className="animate-spin" size={36} style={{ color: '#2378FF', margin: '0 auto 1rem' }} />
+        <MilkGlassLoader size="md" />
         <p style={{ fontWeight: 600, color: '#647C9F' }}>
           {language === 'ta' ? 'விவரங்களை ஏற்றுகிறது...' : language === 'ml' ? 'വിവരങ്ങൾ ശേഖരിക്കുന്നു...' : 'Loading dashboard...'}
         </p>

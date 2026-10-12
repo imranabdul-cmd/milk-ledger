@@ -193,12 +193,24 @@ describe('Family Milk Account - Security & API Integration Suite', () => {
     });
   });
 
-  describe('4. Health Check Endpoint', () => {
+  describe('4. Health Check Endpoint & Static Frontend Serving', () => {
     it('returns healthy status on /api/health', async () => {
       const res = await request(app).get('/api/health');
       expect(res.status).toBe(200);
       expect(res.body.status).toBe('ok');
       expect(res.body.service).toBe('family-milk-account');
+    });
+
+    it('serves compiled client index.html at root "/" and SPA route fallback', async () => {
+      const rootRes = await request(app).get('/');
+      expect(rootRes.status).toBe(200);
+      expect(rootRes.headers['content-type']).toContain('text/html');
+      expect(rootRes.text).toContain('<!DOCTYPE html>');
+
+      const spaRes = await request(app).get('/dashboard');
+      expect(spaRes.status).toBe(200);
+      expect(spaRes.headers['content-type']).toContain('text/html');
+      expect(spaRes.text).toContain('<!DOCTYPE html>');
     });
   });
 });

@@ -39,7 +39,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const saved = localStorage.getItem('milk_user');
     return saved ? JSON.parse(saved) : null;
   });
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(() => {
+    // Optimistic fast render: if user and token exist in storage, load immediately
+    return !Boolean(localStorage.getItem('milk_token') && localStorage.getItem('milk_user'));
+  });
 
   useEffect(() => {
     const checkAuth = async () => {

@@ -72,7 +72,7 @@ describe('Multi-Tenant SaaS Security & RBAC Isolation Suite', () => {
 
     const owner1Res = await pool.query(
       `INSERT INTO family_members (family_id, name, phone, pin_hash, role, language_preference)
-       VALUES ($1, 'Family One Owner', '9952590815', $2, 'owner', 'ta') RETURNING id`,
+       VALUES ($1, 'Family One Owner', '9123456780', $2, 'owner', 'ta') RETURNING id`,
       [family1Id, pinHash]
     );
     const owner1Id = owner1Res.rows[0].id;
@@ -85,16 +85,16 @@ describe('Multi-Tenant SaaS Security & RBAC Isolation Suite', () => {
 
     const mem1Res = await pool.query(
       `INSERT INTO family_members (family_id, name, phone, pin_hash, role, language_preference)
-       VALUES ($1, 'Family One Member', '9952590816', $2, 'member', 'ta') RETURNING id`,
+       VALUES ($1, 'Family One Member', '9123456781', $2, 'member', 'ta') RETURNING id`,
       [family1Id, pinHash]
     );
     member1Id = mem1Res.rows[0].id;
 
     // Logins for Family 1
-    const l1 = await request(app).post('/api/auth/login').send({ phone: '9952590815', pin: '2005' });
+    const l1 = await request(app).post('/api/auth/login').send({ phone: '9123456780', pin: '2005' });
     owner1Token = l1.body.token;
 
-    const l2 = await request(app).post('/api/auth/login').send({ phone: '9952590816', pin: '2005' });
+    const l2 = await request(app).post('/api/auth/login').send({ phone: '9123456781', pin: '2005' });
     member1Token = l2.body.token;
 
     // 3. Setup Family 2 via registration endpoint
@@ -123,7 +123,7 @@ describe('Multi-Tenant SaaS Security & RBAC Isolation Suite', () => {
       expect(res.status).toBe(200);
       expect(res.body.user.familyId).toBe(family1Id);
       expect(res.body.user.role).toBe('owner');
-      expect(res.body.user.phone).toBe('9952590815');
+      expect(res.body.user.phone).toBe('9123456780');
     });
 
     it('new registration creates an independent family and isolated initial rate', async () => {
@@ -146,7 +146,7 @@ describe('Multi-Tenant SaaS Security & RBAC Isolation Suite', () => {
         .send({
           familyName: 'Duplicate Family',
           ownerName: 'Imposter',
-          phone: '9952590815', // Same phone as Family 1 Owner
+          phone: '9123456780', // Same phone as Family 1 Owner
           pin: '1234',
           initialRateRupees: 50
         });
@@ -417,7 +417,7 @@ describe('Multi-Tenant SaaS Security & RBAC Isolation Suite', () => {
 
   describe('5. Lockout Protection against Brute-Force Attacks', () => {
     it('locks out a phone number after 5 consecutive incorrect PIN attempts', async () => {
-      const phone = '9952590815';
+      const phone = '9123456780';
 
       // 4 failed attempts
       for (let i = 0; i < 4; i++) {
@@ -464,7 +464,7 @@ describe('Multi-Tenant SaaS Security & RBAC Isolation Suite', () => {
       // Login returns both token and refreshToken
       const loginRes = await request(app)
         .post('/api/auth/login')
-        .send({ phone: '9952590815', pin: '2005' });
+        .send({ phone: '9123456780', pin: '2005' });
 
       expect(loginRes.status).toBe(200);
       const initialAccessToken = loginRes.body.token;
@@ -486,13 +486,13 @@ describe('Multi-Tenant SaaS Security & RBAC Isolation Suite', () => {
         .get('/api/auth/me')
         .set('Authorization', `Bearer ${refreshRes.body.token}`);
       expect(meRes.status).toBe(200);
-      expect(meRes.body.user.phone).toBe('9952590815');
+      expect(meRes.body.user.phone).toBe('9123456780');
     });
 
     it('handles concurrent tab refreshes within grace period and detects replay attack thereafter', async () => {
       const loginRes = await request(app)
         .post('/api/auth/login')
-        .send({ phone: '9952590815', pin: '2005' });
+        .send({ phone: '9123456780', pin: '2005' });
 
       const oldRefreshToken = loginRes.body.refreshToken;
 
@@ -533,7 +533,7 @@ describe('Multi-Tenant SaaS Security & RBAC Isolation Suite', () => {
     it('revokes refresh token on explicit logout', async () => {
       const loginRes = await request(app)
         .post('/api/auth/login')
-        .send({ phone: '9952590815', pin: '2005' });
+        .send({ phone: '9123456780', pin: '2005' });
 
       const { refreshToken } = loginRes.body;
 
@@ -555,7 +555,7 @@ describe('Multi-Tenant SaaS Security & RBAC Isolation Suite', () => {
       // Login to obtain active session
       const loginRes = await request(app)
         .post('/api/auth/login')
-        .send({ phone: '9952590816', pin: '2005' });
+        .send({ phone: '9123456781', pin: '2005' });
       const oldRefreshToken = loginRes.body.refreshToken;
       const memberAccessToken = loginRes.body.token;
 
@@ -578,13 +578,13 @@ describe('Multi-Tenant SaaS Security & RBAC Isolation Suite', () => {
       // Old PIN must fail login
       const oldLogin = await request(app)
         .post('/api/auth/login')
-        .send({ phone: '9952590816', pin: '2005' });
+        .send({ phone: '9123456781', pin: '2005' });
       expect(oldLogin.status).toBe(401);
 
       // New PIN succeeds
       const newLogin = await request(app)
         .post('/api/auth/login')
-        .send({ phone: '9952590816', pin: '8888' });
+        .send({ phone: '9123456781', pin: '8888' });
       expect(newLogin.status).toBe(200);
     });
 
@@ -592,7 +592,7 @@ describe('Multi-Tenant SaaS Security & RBAC Isolation Suite', () => {
       // Member logs in
       const memLogin = await request(app)
         .post('/api/auth/login')
-        .send({ phone: '9952590816', pin: '2005' });
+        .send({ phone: '9123456781', pin: '2005' });
       const memRefreshToken = memLogin.body.refreshToken;
 
       // Owner resets member's PIN
@@ -612,7 +612,7 @@ describe('Multi-Tenant SaaS Security & RBAC Isolation Suite', () => {
       // Member can now log in with the new PIN
       const memNewLogin = await request(app)
         .post('/api/auth/login')
-        .send({ phone: '9952590816', pin: '7777' });
+        .send({ phone: '9123456781', pin: '7777' });
       expect(memNewLogin.status).toBe(200);
     });
   });

@@ -1,19 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, Suspense, lazy } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { LanguageProvider } from './context/LanguageContext';
 import { VoiceProvider } from './context/VoiceContext';
 import { ToastProvider } from './context/ToastContext';
 import { Header } from './components/Header';
 import { MobileNav } from './components/MobileNav';
-import { LoginPage } from './pages/LoginPage';
-import { DashboardPage } from './pages/DashboardPage';
-import { PurchasesPage } from './pages/PurchasesPage';
-import { PaymentsPage } from './pages/PaymentsPage';
-import { MonthlySettlementPage } from './pages/MonthlySettlementPage';
-import { MembersPage } from './pages/MembersPage';
-import { MemberHomeScreen } from './pages/MemberHomeScreen';
+import { MilkGlassLoader } from './components/MilkGlassLoader';
 import { SetupPinModal } from './components/SetupPinModal';
 import { ErrorBoundary } from './components/ErrorBoundary';
+
+// Lazy-loaded routes for ultra-fast initial bundle loading & snappy page loads
+const LoginPage = lazy(() => import('./pages/LoginPage').then(m => ({ default: m.LoginPage })));
+const DashboardPage = lazy(() => import('./pages/DashboardPage').then(m => ({ default: m.DashboardPage })));
+const PurchasesPage = lazy(() => import('./pages/PurchasesPage').then(m => ({ default: m.PurchasesPage })));
+const PaymentsPage = lazy(() => import('./pages/PaymentsPage').then(m => ({ default: m.PaymentsPage })));
+const MonthlySettlementPage = lazy(() => import('./pages/MonthlySettlementPage').then(m => ({ default: m.MonthlySettlementPage })));
+const MembersPage = lazy(() => import('./pages/MembersPage').then(m => ({ default: m.MembersPage })));
+const MemberHomeScreen = lazy(() => import('./pages/MemberHomeScreen').then(m => ({ default: m.MemberHomeScreen })));
 
 const AppContent: React.FC = () => {
   const { user, isLoading } = useAuth();
@@ -38,25 +41,15 @@ const AppContent: React.FC = () => {
   };
 
   if (isLoading) {
-    return (
-      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#0b132b', color: '#ffffff', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
-        <img
-          src="/icon-192.png"
-          alt="Family Milk"
-          style={{ width: 80, height: 80, borderRadius: 20, boxShadow: '0 8px 32px rgba(37,99,235,0.4)', marginBottom: '1.25rem' }}
-        />
-        <div style={{ fontSize: '1.25rem', fontWeight: 800, letterSpacing: '-0.01em', color: '#ffffff' }}>
-          Family Milk
-        </div>
-        <div style={{ fontSize: '0.8rem', color: '#94a3b8', marginTop: '0.35rem', fontWeight: 500 }}>
-          Connecting ledger...
-        </div>
-      </div>
-    );
+    return <MilkGlassLoader fullscreen size="fullscreen" />;
   }
 
   if (!user) {
-    return <LoginPage />;
+    return (
+      <Suspense fallback={<MilkGlassLoader fullscreen size="fullscreen" />}>
+        <LoginPage />
+      </Suspense>
+    );
   }
 
   // Force first-time PIN change if temporary PIN was used
@@ -64,7 +57,9 @@ const AppContent: React.FC = () => {
     return (
       <div className="app-shell">
         <SetupPinModal />
-        <LoginPage />
+        <Suspense fallback={<MilkGlassLoader size="lg" />}>
+          <LoginPage />
+        </Suspense>
       </div>
     );
   }
@@ -75,9 +70,11 @@ const AppContent: React.FC = () => {
 
   if (isOrdinaryMember || adminViewMode === 'simple') {
     return (
-      <MemberHomeScreen
-        onSwitchToAdmin={!isOrdinaryMember ? () => setAdminViewMode('admin') : undefined}
-      />
+      <Suspense fallback={<MilkGlassLoader fullscreen size="fullscreen" />}>
+        <MemberHomeScreen
+          onSwitchToAdmin={!isOrdinaryMember ? () => setAdminViewMode('admin') : undefined}
+        />
+      </Suspense>
     );
   }
 
@@ -91,11 +88,13 @@ const AppContent: React.FC = () => {
       />
 
       <main>
-        {currentTab === 'dashboard' && <DashboardPage onNavigateToTab={setCurrentTab} />}
-        {currentTab === 'purchases' && <PurchasesPage />}
-        {currentTab === 'payments' && <PaymentsPage />}
-        {currentTab === 'settlement' && <MonthlySettlementPage />}
-        {currentTab === 'members' && <MembersPage />}
+        <Suspense fallback={<MilkGlassLoader size="lg" />}>
+          {currentTab === 'dashboard' && <DashboardPage onNavigateToTab={setCurrentTab} />}
+          {currentTab === 'purchases' && <PurchasesPage />}
+          {currentTab === 'payments' && <PaymentsPage />}
+          {currentTab === 'settlement' && <MonthlySettlementPage />}
+          {currentTab === 'members' && <MembersPage />}
+        </Suspense>
       </main>
 
       <MobileNav currentTab={currentTab} onTabChange={setCurrentTab} />

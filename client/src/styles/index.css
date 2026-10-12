@@ -3834,3 +3834,327 @@ body:has(.login-video-wrapper) {
     0 1px 2px rgba(0, 0, 0, 0.02);
 }
 
+/* ==========================================================================
+   🥛 ULTRA-FAST & LUXURIOUS MILK POURING GLASS LOADER (GLASSMORPHISM)
+   ========================================================================== */
+.milk-loader-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.milk-loader-fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: radial-gradient(circle at 50% 38%, #0f1d3d 0%, #070d1e 100%);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  padding: 1.5rem;
+}
+
+.milk-loader-md {
+  min-height: 280px;
+  padding: 2.5rem 1rem;
+}
+
+.milk-loader-sm {
+  min-height: 180px;
+  padding: 1.25rem 0.75rem;
+}
+
+.milk-loader-lg {
+  min-height: 420px;
+  padding: 3rem 1.5rem;
+}
+
+/* Glassmorphism Outer Card */
+.milk-loader-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 360px;
+  padding: 2.25rem 1.75rem 2rem;
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  box-shadow:
+    0 24px 48px -12px rgba(0, 0, 0, 0.5),
+    0 0 40px rgba(59, 130, 246, 0.16),
+    inset 0 1px 1px rgba(255, 255, 255, 0.35);
+  overflow: hidden;
+  text-align: center;
+}
+
+/* Ambient Backlight Halo */
+.milk-loader-halo {
+  position: absolute;
+  top: 32%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(96, 165, 250, 0.35) 0%, rgba(255, 255, 255, 0.12) 40%, transparent 70%);
+  filter: blur(24px);
+  pointer-events: none;
+  animation: milkHaloPulse 3s ease-in-out infinite alternate;
+}
+
+@keyframes milkHaloPulse {
+  0% { transform: translate(-50%, -50%) scale(0.92); opacity: 0.65; }
+  100% { transform: translate(-50%, -50%) scale(1.15); opacity: 0.95; }
+}
+
+/* Glass Tumbler Stage */
+.milk-glass-stage {
+  position: relative;
+  width: 110px;
+  height: 150px;
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.milk-glass-svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  filter: drop-shadow(0 12px 20px rgba(0, 0, 0, 0.35));
+}
+
+.milk-glass-shadow {
+  fill: rgba(0, 0, 0, 0.3);
+  filter: blur(3px);
+}
+
+/* 1. Milk Liquid Rising Level */
+.milk-liquid-fill {
+  animation: milkLiquidRise 2.4s cubic-bezier(0.25, 0.85, 0.35, 1) infinite;
+  transform-origin: bottom center;
+}
+
+@keyframes milkLiquidRise {
+  0% {
+    transform: translateY(92px);
+  }
+  68% {
+    transform: translateY(18px);
+  }
+  86% {
+    transform: translateY(21px);
+  }
+  100% {
+    transform: translateY(18px);
+  }
+}
+
+/* 2. Milk Surface Wave Oscillation */
+.milk-wave {
+  animation: milkWaveOscillate 1.8s ease-in-out infinite alternate;
+  transform-origin: center;
+}
+
+@keyframes milkWaveOscillate {
+  0% {
+    transform: translateX(-5px) scaleY(0.95);
+  }
+  100% {
+    transform: translateX(5px) scaleY(1.05);
+  }
+}
+
+/* 3. Pouring Stream from top */
+.milk-pour-stream {
+  transform-origin: top center;
+  animation: milkStreamFlow 0.8s ease-in-out infinite alternate;
+}
+
+@keyframes milkStreamFlow {
+  0% {
+    transform: scaleX(0.92);
+    opacity: 0.9;
+  }
+  50% {
+    transform: scaleX(1.15);
+    opacity: 1;
+  }
+  100% {
+    transform: scaleX(0.98);
+    opacity: 0.95;
+  }
+}
+
+/* 4. Impact Splash Ripple */
+.milk-splash-ripple {
+  transform-origin: 60px 75px;
+  animation: milkSplashPulse 1.2s ease-out infinite;
+}
+
+@keyframes milkSplashPulse {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.3;
+  }
+  50% {
+    transform: scale(1.25);
+    opacity: 0.95;
+  }
+  100% {
+    transform: scale(0.85);
+    opacity: 0.5;
+  }
+}
+
+/* 5. Splash Droplets */
+.milk-splash-dot.sd-1 {
+  animation: splashFly1 1.4s ease-out infinite;
+}
+.milk-splash-dot.sd-2 {
+  animation: splashFly2 1.4s ease-out infinite 0.3s;
+}
+
+@keyframes splashFly1 {
+  0%, 100% { transform: translate(0, 0); opacity: 0; }
+  30% { transform: translate(-3px, -5px); opacity: 0.9; }
+  60% { transform: translate(-5px, 2px); opacity: 0; }
+}
+
+@keyframes splashFly2 {
+  0%, 100% { transform: translate(0, 0); opacity: 0; }
+  30% { transform: translate(4px, -6px); opacity: 0.85; }
+  60% { transform: translate(6px, 1px); opacity: 0; }
+}
+
+/* 6. Rising Micro Bubbles */
+.milk-bubble {
+  fill: rgba(255, 255, 255, 0.85);
+  animation: milkBubbleFloat 2s ease-in-out infinite;
+}
+.milk-bubble.mb-1 { animation-delay: 0.1s; animation-duration: 1.8s; }
+.milk-bubble.mb-2 { animation-delay: 0.5s; animation-duration: 2.1s; }
+.milk-bubble.mb-3 { animation-delay: 0.9s; animation-duration: 1.7s; }
+.milk-bubble.mb-4 { animation-delay: 1.2s; animation-duration: 2.3s; }
+.milk-bubble.mb-5 { animation-delay: 0.3s; animation-duration: 1.9s; }
+
+@keyframes milkBubbleFloat {
+  0% {
+    transform: translateY(0);
+    opacity: 0;
+  }
+  25% {
+    opacity: 0.85;
+  }
+  85% {
+    opacity: 0.85;
+  }
+  100% {
+    transform: translateY(-42px);
+    opacity: 0;
+  }
+}
+
+/* 7. Typography & Shimmer */
+.milk-loader-text-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  width: 100%;
+}
+
+.milk-loader-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: #ffffff;
+}
+
+.milk-icon {
+  font-size: 1.25rem;
+  animation: milkIconFloat 2s ease-in-out infinite alternate;
+}
+
+@keyframes milkIconFloat {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-3px); }
+}
+
+.milk-text-shimmer {
+  background: linear-gradient(
+    90deg,
+    #ffffff 0%,
+    #93c5fd 40%,
+    #ffffff 60%,
+    #e2e8f0 100%
+  );
+  background-size: 200% auto;
+  color: transparent;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: milkShimmer 2.2s linear infinite;
+}
+
+@keyframes milkShimmer {
+  to {
+    background-position: 200% center;
+  }
+}
+
+.milk-loader-subtext {
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.65);
+  letter-spacing: 0.01em;
+}
+
+/* 8. Sleek Progress Bar Track */
+.milk-progress-track {
+  width: 140px;
+  height: 4px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.12);
+  margin-top: 0.85rem;
+  overflow: hidden;
+  position: relative;
+}
+
+.milk-progress-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, #60a5fa, #ffffff, #60a5fa);
+  animation: milkProgressMove 1.6s ease-in-out infinite;
+}
+
+@keyframes milkProgressMove {
+  0% {
+    width: 20%;
+    left: -20%;
+  }
+  50% {
+    width: 65%;
+    left: 25%;
+  }
+  100% {
+    width: 30%;
+    left: 100%;
+  }
+}
+
+

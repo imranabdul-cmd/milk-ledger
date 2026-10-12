@@ -15,5 +15,17 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: false,
+    target: 'es2022',
+    cssCodeSplit: true,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom'],
+          'vendor-icons': ['lucide-react'],
+          'vendor-excel': ['exceljs', 'html2canvas'],
+        },
+      },
+    },
+    chunkSizeWarningLimit: 600,
   },
 });

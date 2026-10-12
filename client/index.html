@@ -17,9 +17,158 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Tamil:wght@400;500;600;700;800&family=Noto+Sans+Malayalam:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+      /* Instant Zero-Delay Milk Pouring Glass Preloader */
+      #initial-loader {
+        position: fixed;
+        inset: 0;
+        z-index: 99999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: radial-gradient(circle at 50% 38%, #0f1d3d 0%, #070d1e 100%);
+        font-family: Inter, system-ui, -apple-system, sans-serif;
+        padding: 1.5rem;
+      }
+      .pre-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        max-width: 360px;
+        width: 100%;
+        padding: 2.25rem 1.75rem 2rem;
+        border-radius: 28px;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        backdrop-filter: blur(24px);
+        -webkit-backdrop-filter: blur(24px);
+        box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.5), 0 0 40px rgba(59, 130, 246, 0.16);
+        text-align: center;
+        color: #ffffff;
+      }
+      .pre-glass-stage {
+        width: 110px;
+        height: 150px;
+        margin-bottom: 1.25rem;
+      }
+      .pre-glass-svg {
+        width: 100%;
+        height: 100%;
+        filter: drop-shadow(0 12px 20px rgba(0, 0, 0, 0.35));
+      }
+      @keyframes preLiquidRise {
+        0% { transform: translateY(92px); }
+        68% { transform: translateY(18px); }
+        86% { transform: translateY(21px); }
+        100% { transform: translateY(18px); }
+      }
+      @keyframes preWaveOscillate {
+        0% { transform: translateX(-5px) scaleY(0.95); }
+        100% { transform: translateX(5px) scaleY(1.05); }
+      }
+      @keyframes preStreamFlow {
+        0% { transform: scaleX(0.92); opacity: 0.9; }
+        50% { transform: scaleX(1.15); opacity: 1; }
+        100% { transform: scaleX(0.98); opacity: 0.95; }
+      }
+      @keyframes preBubbleFloat {
+        0% { transform: translateY(0); opacity: 0; }
+        30% { opacity: 0.85; }
+        85% { opacity: 0.85; }
+        100% { transform: translateY(-40px); opacity: 0; }
+      }
+      @keyframes preShimmer {
+        to { background-position: 200% center; }
+      }
+      @keyframes preProgressMove {
+        0% { width: 20%; left: -20%; }
+        50% { width: 65%; left: 25%; }
+        100% { width: 30%; left: 100%; }
+      }
+      .pre-liquid { animation: preLiquidRise 2.4s cubic-bezier(0.25, 0.85, 0.35, 1) infinite; }
+      .pre-wave { animation: preWaveOscillate 1.8s ease-in-out infinite alternate; }
+      .pre-stream { animation: preStreamFlow 0.8s ease-in-out infinite alternate; transform-origin: top center; }
+      .pre-bubble { fill: rgba(255,255,255,0.85); animation: preBubbleFloat 2s ease-in-out infinite; }
+      .pre-b1 { animation-delay: 0.2s; }
+      .pre-b2 { animation-delay: 0.8s; }
+      .pre-b3 { animation-delay: 1.4s; }
+      .pre-title {
+        font-size: 1.15rem;
+        font-weight: 800;
+        margin-bottom: 0.25rem;
+        background: linear-gradient(90deg, #ffffff 0%, #93c5fd 40%, #ffffff 60%, #e2e8f0 100%);
+        background-size: 200% auto;
+        -webkit-background-clip: text;
+        color: transparent;
+        animation: preShimmer 2.2s linear infinite;
+      }
+      .pre-subtext {
+        font-size: 0.82rem;
+        color: rgba(255, 255, 255, 0.65);
+        font-weight: 500;
+      }
+      .pre-track {
+        width: 140px;
+        height: 4px;
+        border-radius: 9999px;
+        background: rgba(255, 255, 255, 0.12);
+        margin-top: 0.85rem;
+        overflow: hidden;
+        position: relative;
+      }
+      .pre-bar {
+        position: absolute;
+        top: 0; left: 0; height: 100%;
+        border-radius: 9999px;
+        background: linear-gradient(90deg, #60a5fa, #ffffff, #60a5fa);
+        animation: preProgressMove 1.6s ease-in-out infinite;
+      }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div id="initial-loader">
+        <div class="pre-card">
+          <div class="pre-glass-stage">
+            <svg viewBox="0 0 120 160" class="pre-glass-svg" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <clipPath id="pre-clip">
+                  <path d="M 28 32 L 34 135 C 34 143, 86 143, 86 135 L 92 32 Z" />
+                </clipPath>
+                <linearGradient id="pre-milk" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#FFFFFF" />
+                  <stop offset="60%" stop-color="#F1F5F9" />
+                  <stop offset="100%" stop-color="#E2E8F0" />
+                </linearGradient>
+                <linearGradient id="pre-stream-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.85" />
+                  <stop offset="100%" stop-color="#F8FAFC" stop-opacity="1" />
+                </linearGradient>
+              </defs>
+              <ellipse cx="60" cy="148" rx="30" ry="6" fill="rgba(0,0,0,0.3)" />
+              <g clip-path="url(#pre-clip)">
+                <g class="pre-liquid">
+                  <rect x="20" y="45" width="80" height="110" fill="url(#pre-milk)" />
+                  <path class="pre-wave" d="M 20 45 Q 35 41, 50 45 T 80 45 T 100 45 L 100 55 L 20 55 Z" fill="#FFFFFF" />
+                  <circle cx="46" cy="85" r="2.2" class="pre-bubble pre-b1" />
+                  <circle cx="68" cy="105" r="1.6" class="pre-bubble pre-b2" />
+                  <circle cx="54" cy="125" r="2.6" class="pre-bubble pre-b3" />
+                </g>
+              </g>
+              <path class="pre-stream" d="M 57.5 0 L 57.5 76 Q 60 79, 62.5 76 L 62.5 0 Z" fill="url(#pre-stream-grad)" />
+              <path d="M 27 30 L 33 136 C 34 145, 86 145, 87 136 L 93 30" fill="rgba(255,255,255,0.06)" stroke="rgba(255, 255, 255, 0.7)" stroke-width="2.4" stroke-linecap="round" />
+              <ellipse cx="60" cy="30" rx="33" ry="5.5" fill="none" stroke="rgba(255, 255, 255, 0.85)" stroke-width="2" />
+              <path d="M 36 133 C 44 141, 76 141, 84 133" fill="none" stroke="rgba(255, 255, 255, 0.9)" stroke-width="3.2" stroke-linecap="round" />
+              <path d="M 33 38 L 38 128" fill="none" stroke="rgba(255, 255, 255, 0.6)" stroke-width="2" stroke-linecap="round" />
+            </svg>
+          </div>
+          <div class="pre-title">🥛 பால் கணக்கு</div>
+          <div class="pre-subtext">Family Milk Account Loading...</div>
+          <div class="pre-track"><div class="pre-bar"></div></div>
+        </div>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
     <script>
       if ('serviceWorker' in navigator) {
