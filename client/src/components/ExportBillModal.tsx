@@ -5,6 +5,7 @@ import { apiRequest } from '../api/client';
 import {
   MilkEntry,
   DashboardSummary,
+  Payment,
   formatPaise,
   Language
 } from '@family-milk/shared';
@@ -48,6 +49,7 @@ export const ExportBillModal: React.FC<ExportBillModalProps> = ({
   const [selectedMonth, setSelectedMonth] = useState<string>(initialYearMonth);
   const [statementLang, setStatementLang] = useState<Language>(language);
   const [entries, setEntries] = useState<MilkEntry[]>([]);
+  const [payments, setPayments] = useState<Payment[]>([]);
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [familyName, setFamilyName] = useState<string>('Family Milk Account');
   const [whatsappText, setWhatsappText] = useState<string>('');
@@ -60,6 +62,7 @@ export const ExportBillModal: React.FC<ExportBillModalProps> = ({
 
   // Ref to the printable/shareable card element for html2canvas
   const billCardRef = useRef<HTMLDivElement>(null);
+  const tableScrollRef = useRef<HTMLDivElement>(null);
 
   // Sync statement language if global language changes
   useEffect(() => {
@@ -81,16 +84,18 @@ export const ExportBillModal: React.FC<ExportBillModalProps> = ({
     const loadData = async () => {
       setIsLoading(true);
       try {
-        const [entriesRes, sumRes, textRes] = await Promise.all([
+        const [entriesRes, sumRes, textRes, paymentsRes] = await Promise.all([
           apiRequest<{ entries: MilkEntry[] }>(`/api/milk/entries?month=${selectedMonth}`),
           apiRequest<{ summary: DashboardSummary }>(`/api/settlement/summary?month=${selectedMonth}`),
           apiRequest<{ text: string; shareUrl: string }>(
             `/api/settlement/whatsapp-text?month=${selectedMonth}&lang=${statementLang}`
           ),
+          apiRequest<{ payments: Payment[] }>(`/api/payments?month=${selectedMonth}`),
         ]);
 
         if (isMounted) {
           setEntries(entriesRes.entries || []);
+          setPayments(paymentsRes.payments || []);
           setSummary(sumRes.summary || null);
           setWhatsappText(textRes.text || '');
 
@@ -139,6 +144,7 @@ export const ExportBillModal: React.FC<ExportBillModalProps> = ({
         yearMonth: selectedMonth,
         entries,
         summary,
+        payments,
         lang: statementLang
       });
       downloadBlob(bundle.blob, bundle.filename);
@@ -155,13 +161,35 @@ export const ExportBillModal: React.FC<ExportBillModalProps> = ({
     }
   };
 
+  // Temporarily expand the scrollable table container so html2canvas captures ALL rows
+  const captureFullBillCard = async (filename: string): Promise<{ blob: Blob }> => {
+    if (!billCardRef.current) throw new Error('Bill card not found');
+    const scrollEl = tableScrollRef.current;
+    let origMaxHeight = '';
+    let origOverflowY = '';
+    if (scrollEl) {
+      origMaxHeight = scrollEl.style.maxHeight;
+      origOverflowY = scrollEl.style.overflowY;
+      scrollEl.style.maxHeight = 'none';
+      scrollEl.style.overflowY = 'visible';
+    }
+    try {
+      return await captureBillCardAsJpg(billCardRef.current, filename);
+    } finally {
+      if (scrollEl) {
+        scrollEl.style.maxHeight = origMaxHeight;
+        scrollEl.style.overflowY = origOverflowY;
+      }
+    }
+  };
+
   // Handle Download Photo (JPG)
   const handleDownloadPhoto = async () => {
     if (!billCardRef.current || !summary) return;
     setIsDownloading(true);
     try {
       const filename = `Milk_Bill_${selectedMonth}_${sanitizedFamily}.jpg`;
-      const { blob } = await captureBillCardAsJpg(billCardRef.current, filename);
+      const { blob } = await captureFullBillCard(filename);
       downloadBlob(blob, filename);
       setDownloadSuccessMsg(t('photoDownloaded'));
       toast.success(
@@ -183,7 +211,7 @@ export const ExportBillModal: React.FC<ExportBillModalProps> = ({
     setIsFormatChooserOpen(false);
     try {
       const filename = `Milk_Bill_${selectedMonth}_${sanitizedFamily}.jpg`;
-      const { blob } = await captureBillCardAsJpg(billCardRef.current, filename);
+      const { blob } = await captureFullBillCard(filename);
       const result = await shareJpgWithAppa(blob, filename, whatsappText);
       if (result.mode === 'download_and_whatsapp') {
         setDownloadSuccessMsg(t('photoDownloaded'));
@@ -211,6 +239,7 @@ export const ExportBillModal: React.FC<ExportBillModalProps> = ({
         yearMonth: selectedMonth,
         entries,
         summary,
+        payments,
         lang: statementLang
       });
       const result = await shareExcelWithAppa(
@@ -591,7 +620,7 @@ export const ExportBillModal: React.FC<ExportBillModalProps> = ({
                 </div>
 
                 {/* Table */}
-                <div style={{ maxHeight: '280px', overflowY: 'auto' }}>
+                <div ref={tableScrollRef} style={{ maxHeight: '280px', overflowY: 'auto' }}>
                   {entries.length === 0 ? (
                     <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>
                       <p style={{ margin: 0, fontSize: '0.9rem' }}>
@@ -659,7 +688,7 @@ export const ExportBillModal: React.FC<ExportBillModalProps> = ({
                                 <td style={{ padding: '0.5rem 0.65rem', color: '#64748b' }}>
                                   {idx + 1}
                                 </td>
-                                <td style={{ padding: '0.5rem 0.65rem', fontWeight: 700, color: isNoMilk ? '#dc2626' : '#0f172a' }}>
+                                <td style={{ padding: '0.5rem 0.65rem', fontWeight: 700, whiteSpace: 'nowrap', color: isNoMilk ? '#dc2626' : '#0f172a' }}>
                                   {displayDate}
                                 </td>
                                 <td style={{ padding: '0.5rem 0.65rem', fontWeight: 700, color: isNoMilk ? '#dc2626' : undefined }}>
